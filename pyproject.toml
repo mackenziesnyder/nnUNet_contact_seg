@@ -1,0 +1,16 @@
+[project]
+name = "nnunet-contact-seg"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "nnunetv2>=2.5.1",
+    "pulp<2.8.0",
+    "scikit-image>=0.25.0",
+    "snakebids>=0.13.1",
+    "snakemake>=7.32.4",
+    "torch>=2.5.1",
+    "torchaudio>=2.5.1",
+    "torchvision>=0.20.1",
+]
