@@ -5,6 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "acvl-utils==0.2",
+    "blosc2>=2.7.1",
     "nnunetv2>=2.5.1",
     "pulp<2.8.0",
     "scikit-image>=0.25.0",

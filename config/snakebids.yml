@@ -51,7 +51,11 @@ parse_args:
   --transform:
     help: |
       Whether predicted coordinates should be transformed. Note that transformation matrix (4x4) must be provided.
-    default: False 
+    default: False
+  --label:
+    help: |
+      Whether predicted coordinates should be labelled by electrode. Requires an 3D Slicer generated .fcsv file
+    default: False  
 
 
 
