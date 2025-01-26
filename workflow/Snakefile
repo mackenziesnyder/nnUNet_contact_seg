@@ -121,19 +121,24 @@ rule get_coords:
     script:
         './scripts/nnUNet_coords.py'
 
-# if rule
+if config['transform']:
 
-# rule get_coords:
-#     input:
-#         model_seg = rules.model_inference.output.contact_seg
-    
-#     output:
-#         model_coords = bids(
-#             root = config['output_dir'],
-#             suffix = 'dseg.nii.gz',
-#             desc = 'contacts_nnunet',
-#             **inputs['electrode_ct'].wildcards
-#         )
+    rule transform_coords:
+        input:
+            orig_coords = rules.get_coords.output.model_coords
+            transformation_matrix = bids(
+                root = config['bids_dir'],
+                suffix = 'ras_xfm',
+                extension = '.txt',
+                **inputs['post_ct'].wildcards
+            )
+        
+        output:
+            transformed_coords = bids(
+                root = config['output_dir'],
+                suffix = 'transformed_nnunet.fcsv',
+                **inputs['post_ct'].wildcards
+            )
 
-#     script:
-#         './scripts/nnUNet_coords.py'
+        script:
+            './scripts/transform_coords.py'

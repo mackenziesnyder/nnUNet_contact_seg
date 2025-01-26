@@ -25,7 +25,8 @@ pybids_inputs:
       - subject
   # target_entry:
   #   filters:
-  #     extension: 'planned.fcsv'
+  #     extension: 'planned'
+  #     extension: '.fcsv'
   #   wildcards:
   #     - subject
   # transform_txt:
@@ -50,11 +51,12 @@ parse_args:
     default: False 
   --transform:
     help: |
-      Whether predicted coordinates should be transformed. Note that transformation matrix (4x4) must be provided.
+      Whether predicted coordinates should be transformed. Note that transformation matrix (4x4) must be provided as .txt file.
     default: False
   --label:
     help: |
-      Whether predicted coordinates should be labelled by electrode. Requires an 3D Slicer generated .fcsv file
+      Whether predicted coordinates should be labelled by electrode. 
+      Requires a 3D Slicer generated .fcsv file, containing the target and entry points for each electrode
     default: False  
 
 

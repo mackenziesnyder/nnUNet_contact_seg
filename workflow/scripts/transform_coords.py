@@ -46,3 +46,18 @@ def array_to_fcsv(coord_array, output_fcsv):
 
 	out_df=pd.DataFrame(out_df)
 	out_df.to_csv(output_fcsv, sep=',', index=False, lineterminator="", mode='a', header=False, float_format = '%.3f')
+
+def apply_transform(orig_fcsv, transform_path, out_fcsv):
+	coords = pd.read_csv(orig_fcsv, skiprows = 3, header = None)
+	coords = coords[[1,2,3, 11]].to_numpy()
+	
+	transformed = transform_points(coords, transform_path)
+
+	array_to_fcsv(transformed, out_fcsv)
+
+if __name__ == "__main__":
+	apply_transform(
+		orig_fscv=snakemake.input['orig_coords'],
+		transform_path=snakemake.input['transformation_matrix'],
+		out_fcsv=snakemake.output['transformed_coords']
+	)
