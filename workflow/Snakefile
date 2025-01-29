@@ -43,29 +43,65 @@ def get_model():
 
     return (Path(download_dir)/ "model" / Path(local_model).name).absolute()
 
-rule all:
-    input:
-        contact_coords = inputs['post_ct'].expand(
+def get_final_output():
+    final = []
+    final.extend(
+        inputs['post_ct'].expand(
             bids(
                 root = config['output_dir'],
                 suffix = 'nnUNet.fcsv',
-                **inputs['post_ct'].wildcards
-            )
-        ),
-        labelled_coords = inputs['post_ct'].expand(
-            bids(
-                root = config['output_dir'],
-                suffix = 'labelled_nnUNet.fcsv',
-                **inputs['post_ct'].wildcards
-            )
-        ),
-        transformed_coords = inputs['post_ct'].expand(
-            bids(
-                root = config['output_dir'],
-                suffix = 'transformed_nnUNet.fcsv',
-                **inputs['post_ct'].wildcards
+                **inputs["post_ct"].wildcards         
             )
         )
+    )
+    if config['label']:
+        final.extend(
+            inputs['post_ct'].expand(
+                bids(
+                    root = config['output_dir'], 
+                    suffix = 'labelled_nnUNet.fcsv',
+                    **inputs["post_ct"].wildcards   
+                    )
+            )
+        )
+    if config['transform']:
+        final.extend(
+            inputs['post_ct'].expand(
+                bids(
+                    root = config['output_dir'], 
+                    suffix = 'transformed_nnUNet.fcsv',
+                    **inputs["post_ct"].wildcards   
+                    )
+            )
+        )
+    print(final)
+    return final
+
+
+rule all:
+    input:
+        get_final_output()
+        # contact_coords = inputs['post_ct'].expand(
+        #     bids(
+        #         root = config['output_dir'],
+        #         suffix = 'nnUNet.fcsv',
+        #         **inputs['post_ct'].wildcards
+        #     )
+        # ),
+        # labelled_coords = inputs['post_ct'].expand(
+        #     bids(
+        #         root = config['output_dir'],
+        #         suffix = 'labelled_nnUNet.fcsv',
+        #         **inputs['post_ct'].wildcards
+        #     )
+        # ),
+        # transformed_coords = inputs['post_ct'].expand(
+        #     bids(
+        #         root = config['output_dir'],
+        #         suffix = 'transformed_nnUNet.fcsv',
+        #         **inputs['post_ct'].wildcards
+        #     )
+        # )
 
 rule download_model:
     params:
@@ -135,14 +171,13 @@ rule get_coords:
     script:
         './scripts/nnUNet_coords.py'
 
-if config['transform'] and config['label']:
+if config['transform']:
 
     rule transform_coords:
         input:
             coords = rules.get_coords.output.model_coords,
             transformation_matrix = bids(
                 root = config['bids_dir'],
-                desc = 'rigid_from-ct_to-T1w_type-ras',
                 suffix = 'xfm',
                 extension = '.txt',
                 **inputs['post_ct'].wildcards
@@ -157,8 +192,53 @@ if config['transform'] and config['label']:
 
         script:
             './scripts/transform_coords.py'
-    
+
+if config['label']:
+
     rule label_coords:
+        input:
+            coords = rules.get_coords.output.model_coords,
+            planned_fcsv = bids(
+                root = config['bids_dir'],
+                suffix = 'planned',
+                extension = '.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+        
+        output:
+            labelled_coords = bids(
+                root = config['output_dir'],
+                suffix = 'labelled_nnUNet.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+
+        script:
+            './scripts/label.py'
+
+if config['transform'] and config['label']:
+
+    # rule transform_coords:
+    #     input:
+    #         coords = rules.get_coords.output.model_coords,
+    #         transformation_matrix = bids(
+    #             root = config['bids_dir'],
+    #             desc = 'rigid_from-ct_to-T1w_type-ras',
+    #             suffix = 'xfm',
+    #             extension = '.txt',
+    #             **inputs['post_ct'].wildcards
+    #         )
+        
+    #     output:
+    #         transformed_coords = bids(
+    #             root = config['output_dir'],
+    #             suffix = 'transformed_nnUNet.fcsv',
+    #             **inputs['post_ct'].wildcards
+    #         )
+
+    #     script:
+    #         './scripts/transform_coords.py'
+    
+    rule label_transformed_coords:
         input:
             coords = rules.transform_coords.output.transformed_coords,
             planned_fcsv = bids(
@@ -177,48 +257,3 @@ if config['transform'] and config['label']:
 
         script:
             './scripts/label.py'
-
-elif config['label'] and not config['transform']:
-
-    rule label_coords:
-        input:
-            coords = rules.get_coords.output.model_coords,
-            planned_fcsv = bids(
-                root = config['bids_dir'],
-                suffix = 'planned',
-                extension = '.fcsv',
-                **inputs['post_ct'].wildcards
-            )
-        
-        output:
-            labelled_coords = bids(
-                root = config['output_dir'],
-                suffix = 'labelled_nnunet.fcsv',
-                **inputs['post_ct'].wildcards
-            )
-
-        script:
-            './scripts/label.py'
-
-
-elif config['transform'] and not config['label']:
-
-    rule transform_coords:
-        input:
-            coords = rules.get_coords.output.model_coords,
-            transformation_matrix = bids(
-                root = config['bids_dir'],
-                suffix = 'xfm',
-                extension = '.txt',
-                **inputs['post_ct'].wildcards
-            )
-        
-        output:
-            transformed_coords = bids(
-                root = config['output_dir'],
-                suffix = 'transformed_nnUNet.fcsv',
-                **inputs['post_ct'].wildcards
-            )
-
-        script:
-            './scripts/transform_coords.py'
