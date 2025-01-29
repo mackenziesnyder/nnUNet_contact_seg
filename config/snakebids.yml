@@ -25,13 +25,15 @@ pybids_inputs:
       - subject
   # target_entry:
   #   filters:
-  #     extension: 'planned'
+  #     session: 'pre'
+  #     suffix: 'planned'
   #     extension: '.fcsv'
   #   wildcards:
   #     - subject
   # transform_txt:
   #   filters:
-  #     suffix: 'ras_xfm'
+  #     session: 'post'
+  #     suffix: 'xfm'
   #     extension: '.txt'
 # configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
@@ -52,11 +54,13 @@ parse_args:
   --transform:
     help: |
       Whether predicted coordinates should be transformed. Note that transformation matrix (4x4) must be provided as .txt file.
+    action: 'store_true'
     default: False
   --label:
     help: |
       Whether predicted coordinates should be labelled by electrode. 
       Requires a 3D Slicer generated .fcsv file, containing the target and entry points for each electrode
+    action: 'store_true'
     default: False  
 
 

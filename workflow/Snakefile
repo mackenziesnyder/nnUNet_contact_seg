@@ -48,7 +48,21 @@ rule all:
         contact_coords = inputs['post_ct'].expand(
             bids(
                 root = config['output_dir'],
-                suffix = 'nnunet.fcsv',
+                suffix = 'nnUNet.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+        ),
+        labelled_coords = inputs['post_ct'].expand(
+            bids(
+                root = config['output_dir'],
+                suffix = 'labelled_nnUNet.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+        ),
+        transformed_coords = inputs['post_ct'].expand(
+            bids(
+                root = config['output_dir'],
+                suffix = 'transformed_nnUNet.fcsv',
                 **inputs['post_ct'].wildcards
             )
         )
@@ -81,13 +95,13 @@ rule model_inference:
         contact_seg = bids(
             root = config['output_dir'],
             suffix = 'dseg.nii.gz',
-            desc = 'contacts_nnunet',
+            desc = 'contacts_nnUNet',
             **inputs['post_ct'].wildcards
         ),
     log:
         bids(
             root="logs",
-            suffix="nnunet.txt",
+            suffix="nnUNet.txt",
             **inputs['post_ct'].wildcards,
         ),
 
@@ -101,10 +115,10 @@ rule model_inference:
         #copy from temp output folder to final output
         "mkdir -p {params.model_dir} {params.in_folder} {params.out_folder} && "
         "{params.cmd_copy_inputs} && "
-        "unzip {input.nnUNet_model} -d {params.model_dir} && "
+        "unzip -n {input.nnUNet_model} -d {params.model_dir} && "
         "export nnUNet_results={params.model_dir} && "
         "export nnUNet_raw={params.in_folder} && "
-        "nnUNetv2_predict -d Dataset011_seeg_contacts -i {params.in_folder} -o {params.out_folder} -f 0 -tr nnUNetTrainer_250epochs -c 3d_fullres -p nnUNetPlans &> {log} && "
+        "nnUNetv2_predict -d Dataset011_seeg_contacts -i {params.in_folder} -o {params.out_folder} -f 0 -tr nnUNetTrainer_250epochs --disable_tta -c 3d_fullres -p nnUNetPlans &> {log} && "
         "echo 'nnUNet prediction complete' && "
         "cp {params.temp_lbl} {output.contact_seg}"
 
@@ -115,20 +129,21 @@ rule get_coords:
     output:
         model_coords = bids(
                 root = config['output_dir'],
-                suffix = 'nnunet.fcsv',
+                suffix = 'nnUNet.fcsv',
                 **inputs['post_ct'].wildcards
             )
     script:
         './scripts/nnUNet_coords.py'
 
-if config['transform']:
+if config['transform'] and config['label']:
 
     rule transform_coords:
         input:
-            orig_coords = rules.get_coords.output.model_coords
+            coords = rules.get_coords.output.model_coords,
             transformation_matrix = bids(
                 root = config['bids_dir'],
-                suffix = 'ras_xfm',
+                desc = 'rigid_from-ct_to-T1w_type-ras',
+                suffix = 'xfm',
                 extension = '.txt',
                 **inputs['post_ct'].wildcards
             )
@@ -136,7 +151,72 @@ if config['transform']:
         output:
             transformed_coords = bids(
                 root = config['output_dir'],
-                suffix = 'transformed_nnunet.fcsv',
+                suffix = 'transformed_nnUNet.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+
+        script:
+            './scripts/transform_coords.py'
+    
+    rule label_coords:
+        input:
+            coords = rules.transform_coords.output.transformed_coords,
+            planned_fcsv = bids(
+                root = config['bids_dir'],
+                suffix = 'planned',
+                extension = '.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+        
+        output:
+            labelled_coords = bids(
+                root = config['output_dir'],
+                suffix = 'labelled_nnUNet.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+
+        script:
+            './scripts/label.py'
+
+elif config['label'] and not config['transform']:
+
+    rule label_coords:
+        input:
+            coords = rules.get_coords.output.model_coords,
+            planned_fcsv = bids(
+                root = config['bids_dir'],
+                suffix = 'planned',
+                extension = '.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+        
+        output:
+            labelled_coords = bids(
+                root = config['output_dir'],
+                suffix = 'labelled_nnunet.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+
+        script:
+            './scripts/label.py'
+
+
+elif config['transform'] and not config['label']:
+
+    rule transform_coords:
+        input:
+            coords = rules.get_coords.output.model_coords,
+            transformation_matrix = bids(
+                root = config['bids_dir'],
+                suffix = 'xfm',
+                extension = '.txt',
+                **inputs['post_ct'].wildcards
+            )
+        
+        output:
+            transformed_coords = bids(
+                root = config['output_dir'],
+                suffix = 'transformed_nnUNet.fcsv',
                 **inputs['post_ct'].wildcards
             )
 

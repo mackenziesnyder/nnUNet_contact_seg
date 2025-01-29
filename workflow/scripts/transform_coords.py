@@ -1,22 +1,22 @@
 import numpy as np
 import pandas as pd
 
-def transform_points(ct_coords, transform):
-    transformed_coords = np.zeros(ct_coords.shape)
+def transform_points(coords, transform):
+    transformed_coords = np.zeros(coords.shape)
     transform = np.loadtxt(transform)
 
     M = transform[:3,:3]
     abc = transform[:3,3]
 
 
-    for i in range(len(ct_coords)):
-        vec = ct_coords[i,:]
+    for i in range(len(coords)):
+        vec = coords[i,:]
         tvec = M.dot(vec) + abc
         transformed_coords[i,:] = tvec[:3]
 
-    transform_coords = np.round(transform_coords, 1).astype(float)
+    transformed_coords = np.round(transformed_coords, 1).astype(float)
 
-    return transform_coords
+    return transformed_coords
 
 def array_to_fcsv(coord_array, output_fcsv):
 	with open(output_fcsv, 'w') as fid:
@@ -49,15 +49,15 @@ def array_to_fcsv(coord_array, output_fcsv):
 
 def apply_transform(orig_fcsv, transform_path, out_fcsv):
 	coords = pd.read_csv(orig_fcsv, skiprows = 3, header = None)
-	coords = coords[[1,2,3, 11]].to_numpy()
+	coords = coords[[1,2,3]].to_numpy()
 	
-	transformed = transform_points(coords, transform_path)
+	transformed = transform_points(coords = coords, transform = transform_path)
 
 	array_to_fcsv(transformed, out_fcsv)
 
 if __name__ == "__main__":
 	apply_transform(
-		orig_fscv=snakemake.input['orig_coords'],
+		orig_fcsv=snakemake.input['coords'],
 		transform_path=snakemake.input['transformation_matrix'],
 		out_fcsv=snakemake.output['transformed_coords']
 	)

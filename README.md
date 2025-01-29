@@ -1,6 +1,6 @@
-#BIDs app for localizing stereoelectroencephalography (SEEG) contact from post-operative CT scans.
+# BIDs app for localizing stereoelectroencephalography (SEEG) contact from post-operative CT scans.
 
-Uses the nnUNetv2 framework to train a 3D U-Net model. Incorporates the Snakemake/SnakeBIDS workflow management tools.
+Uses the nnUNetv2 framework (https://github.com/MIC-DKFZ/nnUNet) to train a 3D U-Net model. Incorporates the Snakemake/SnakeBIDS workflow management tools.
 
 Project is managed with uv (https://github.com/astral-sh/uv).
 
