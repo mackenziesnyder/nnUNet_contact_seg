@@ -171,6 +171,7 @@ rule get_coords:
     script:
         './scripts/nnUNet_coords.py'
 
+
 if config['transform']:
 
     rule transform_coords:
@@ -192,28 +193,6 @@ if config['transform']:
 
         script:
             './scripts/transform_coords.py'
-
-if config['label']:
-
-    rule label_coords:
-        input:
-            coords = rules.get_coords.output.model_coords,
-            planned_fcsv = bids(
-                root = config['bids_dir'],
-                suffix = 'planned',
-                extension = '.fcsv',
-                **inputs['post_ct'].wildcards
-            )
-        
-        output:
-            labelled_coords = bids(
-                root = config['output_dir'],
-                suffix = 'labelled_nnUNet.fcsv',
-                **inputs['post_ct'].wildcards
-            )
-
-        script:
-            './scripts/label.py'
 
 if config['transform'] and config['label']:
 
@@ -257,3 +236,25 @@ if config['transform'] and config['label']:
 
         script:
             './scripts/label.py'
+
+# if config['label']:
+
+#     rule label_coords:
+#         input:
+#             coords = rules.get_coords.output.model_coords,
+#             planned_fcsv = bids(
+#                 root = config['bids_dir'],
+#                 suffix = 'planned',
+#                 extension = '.fcsv',
+#                 **inputs['post_ct'].wildcards
+#             )
+        
+#         output:
+#             labelled_coords = bids(
+#                 root = config['output_dir'],
+#                 suffix = 'labelled_nnUNet.fcsv',
+#                 **inputs['post_ct'].wildcards
+#             )
+
+#         script:
+#             './scripts/label.py'

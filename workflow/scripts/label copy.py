@@ -197,11 +197,14 @@ def df_to_fcsv(input_df, output_fcsv):
     out_df.to_csv(output_fcsv, sep=',', index=False, lineterminator="", mode='a', header=False, float_format = '%.3f')
 
 if __name__ == "__main__":
-    determineFCSVCoordSystem(snakemake.input['planned_fcsv'], overwrite_fcsv=True)
-    determineFCSVCoordSystem(snakemake.input['coords'], overwrite_fcsv=True)
+    planned = '/home/arun/Documents/data/seeg/bids/sub-P167/sub-P167_planned.fcsv'
+    coords = '/home/arun/Documents/data/seeg/derivatives/nnUNet/sub-P167/sub-P167_transformed_nnUNet.fcsv'
 
-    df_te = pd.read_csv(snakemake.input['planned_fcsv'], skiprows = 3, header = None)
-    df_contacts = pd.read_csv(snakemake.input['coords'], skiprows = 3, header = None)
+    determineFCSVCoordSystem(planned, overwrite_fcsv=True)
+    determineFCSVCoordSystem(coords, overwrite_fcsv=True)
+
+    df_te = pd.read_csv(planned, skiprows = 3, header = None)
+    df_contacts = pd.read_csv(coords, skiprows = 3, header = None)
 
     contact_array = df_contacts[[1, 2, 3]].values
 
@@ -210,7 +213,7 @@ if __name__ == "__main__":
     
   # Label contacts for each electrode
     labelled_contacts = label_multiple_electrodes(electrode_list)
-    labelled_df = convert_to_df(labelled_contacts)
+    # labelled_df = convert_to_df(labelled_contacts)
 
-    df_to_fcsv(labelled_df, snakemake.output['labelled_coords'])        
+    # df_to_fcsv(labelled_df, snakemake.output['labelled_coords'])        
 
