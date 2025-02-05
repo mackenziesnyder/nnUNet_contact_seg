@@ -24,8 +24,22 @@ def get_download_dir():
         download_dir = dirs.user_cache_dir
     return download_dir
 
+def get_input(wildcards):
+    post_ct = bids(
+        root = config['bids_dir'],
+        suffix = 'ct',
+        datatype = 'ct',
+        session = 'post',
+        acq = 'Electrode',
+        run = '01',
+        extension = '.nii.gz',
+        **inputs["post_ct"].wildcards,
+    )
+    return post_ct
+
 def get_cmd_copy_inputs(wildcards, input):
-    in_img = input.post_ct
+    in_img = input.in_img
+    print(in_img)
     if isinstance(in_img, str):
         # we have one input image
         return f"cp {in_img} tempimg/temp_0000.nii.gz"
@@ -74,9 +88,7 @@ def get_final_output():
                     )
             )
         )
-    print(final)
     return final
-
 
 rule all:
     input:
@@ -113,10 +125,10 @@ rule download_model:
 
     shell:
         "mkdir -p {params.model_dir} && wget https://{params.url} -O {output}"
-
+    
 rule model_inference:
     input:
-        post_ct = inputs['post_ct'].path,
+        in_img = get_input,
         nnUNet_model = get_model()
 
     params:
@@ -140,6 +152,12 @@ rule model_inference:
             suffix="nnUNet.txt",
             **inputs['post_ct'].wildcards,
         ),
+
+    # shadow:
+    #     "minimal"
+    
+    group:
+        'subj'
 
     shell:
         #create temp folders
@@ -168,6 +186,10 @@ rule get_coords:
                 suffix = 'nnUNet.fcsv',
                 **inputs['post_ct'].wildcards
             )
+
+    group:
+        'subj'
+
     script:
         './scripts/nnUNet_coords.py'
 
@@ -190,9 +212,35 @@ if config['transform']:
                 suffix = 'transformed_nnUNet.fcsv',
                 **inputs['post_ct'].wildcards
             )
+        group:
+            'subj'    
 
         script:
             './scripts/transform_coords.py'
+
+if config['label']:
+
+    rule label_coords:
+        input:
+            coords = rules.get_coords.output.model_coords,
+            planned_fcsv = bids(
+                root = config['bids_dir'],
+                suffix = 'planned',
+                extension = '.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+        
+        output:
+            labelled_coords = bids(
+                root = config['output_dir'],
+                suffix = 'labelled_nnUNet.fcsv',
+                **inputs['post_ct'].wildcards
+            )
+
+        group:
+            'subj'
+        script:
+            './scripts/label.py'
 
 if config['transform'] and config['label']:
 
@@ -233,28 +281,9 @@ if config['transform'] and config['label']:
                 suffix = 'labelled_nnUNet.fcsv',
                 **inputs['post_ct'].wildcards
             )
+        
+        group:
+            'subj'
 
         script:
             './scripts/label.py'
-
-# if config['label']:
-
-#     rule label_coords:
-#         input:
-#             coords = rules.get_coords.output.model_coords,
-#             planned_fcsv = bids(
-#                 root = config['bids_dir'],
-#                 suffix = 'planned',
-#                 extension = '.fcsv',
-#                 **inputs['post_ct'].wildcards
-#             )
-        
-#         output:
-#             labelled_coords = bids(
-#                 root = config['output_dir'],
-#                 suffix = 'labelled_nnUNet.fcsv',
-#                 **inputs['post_ct'].wildcards
-#             )
-
-#         script:
-#             './scripts/label.py'

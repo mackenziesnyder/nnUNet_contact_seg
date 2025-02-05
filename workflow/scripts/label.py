@@ -93,7 +93,7 @@ def calculate_distance_to_line(point, line_point, line_direction):
     projection_length = np.dot(vector_to_point, unit_vector)
     projection_point = line_point + projection_length * unit_vector
 
-    if -1 <= projection_length <= np.linalg.norm(line_direction):
+    if projection_length <= np.linalg.norm(line_direction):
       distance = np.linalg.norm(point - projection_point)
       return distance
     else:
