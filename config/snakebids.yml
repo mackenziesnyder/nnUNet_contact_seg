@@ -23,6 +23,8 @@ pybids_inputs:
       extension: '.nii.gz'
     wildcards:
       - subject
+      - run
+      # - acq
   # target_entry:
   #   filters:
   #     session: 'pre'

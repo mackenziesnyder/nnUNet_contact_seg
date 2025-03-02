@@ -69,6 +69,12 @@ def determineFCSVCoordSystem(input_fcsv,overwrite_fcsv=False):
 
 
 def create_electrode_list(df_te):
+    '''create a list of dictionaries for each electrode.
+    Dictionaries contain the target and entry point, the label for that electrode, 
+    and an empty list for the contacts belonging to that electrode. 
+    Reads in a 3D Slicer .fcsv file containing the target and entry points 
+    (in this order) for each electrode trajectory.
+    '''
     electrodes = []
     for i in range(0, len(df_te), 2):
         target_point = df_te.iloc[i][[1, 2, 3]].values
@@ -83,34 +89,49 @@ def create_electrode_list(df_te):
         })
     return electrodes
 
-def calculate_distance_to_line(point, line_point, line_direction):
-    line_point = np.array(line_point)
-    line_direction = np.array(line_direction)
+def calculate_distance_to_line(point, entry, trajectory_vec):
+    '''
+    Returns the magnitude of the orthogonal vector between the contact and the 
+    planned electrode trajectory. see https://en.wikipedia.org/wiki/Vector_projection.
+    Constrained to be along the length of trajectory (prevent incorrect labelling).
+
+    '''
+    entry = np.array(entry)
+    trajectory_vec = np.array(trajectory_vec)
     point = np.array(point)
 
-    unit_vector = line_direction / np.linalg.norm(line_direction)
-    vector_to_point = point - line_point
+    unit_vector = trajectory_vec / np.linalg.norm(trajectory_vec)
+    vector_to_point = point - entry
     projection_length = np.dot(vector_to_point, unit_vector)
-    projection_point = line_point + projection_length * unit_vector
+    projection_point = entry + projection_length * unit_vector
 
-    if projection_length <= np.linalg.norm(line_direction):
+    trajectory_length = np.linalg.norm(trajectory_vec)
+
+    if projection_length <= trajectory_length:
       distance = np.linalg.norm(point - projection_point)
       return distance
-    else:
-      return None
+    
+    # distance = np.linalg.norm(point - projection_point)
+    # return distance
 
 def assign_contacts_to_electrodes(electrodes, contacts, max_distance_threshold=4.0):
+    '''
+    Iterates through each "contact" or coordinate segmented by the nnUNet model.
+    Uses the perpendicular distance of contact from the trajectory to assign 
+    Distance must be within the threshold (set to 4 mm).
+    Depending on the accuracy of implantation (according to plan) can result in missed contacts.  
+    '''
 
     for contact in contacts:
         min_distance = float('inf')
         assigned_electrode = None
 
         for electrode in electrodes:
-            entry_point = electrode['entry_point']
             target_point = electrode['target_point']
-            direction_vector = target_point - entry_point
+            entry_point = electrode['entry_point']
+            elec_vector = target_point - entry_point
 
-            distance = calculate_distance_to_line(contact, entry_point, direction_vector)
+            distance = calculate_distance_to_line(contact, entry_point, elec_vector)
             if distance and distance <= max_distance_threshold and distance < min_distance:
                 min_distance = distance
                 assigned_electrode = electrode
@@ -167,7 +188,11 @@ def convert_to_df(labelled_final):
   # Display the new list of contact dictionaries
   new_df = pd.DataFrame(new_contacts_dicts)
   return new_df
+
 def df_to_fcsv(input_df, output_fcsv):
+    '''
+    Convert dataframe object to Slicer-readable .fcsv file.
+    '''
     with open(output_fcsv, 'w') as fid:
         fid.write("# Markups fiducial file version = 4.11\n")
         fid.write("# CoordinateSystem = 0\n")
