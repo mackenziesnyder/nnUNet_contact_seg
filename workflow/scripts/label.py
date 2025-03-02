@@ -141,6 +141,12 @@ def assign_contacts_to_electrodes(electrodes, contacts, max_distance_threshold=4
 
     return electrodes
 
+def sorted_nicely(lst):
+    convert = lambda text: int(text) if text.isdigit() else text
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    
+    return np.argsort(lst)
+
 def new_label_contacts(target_point, contacts, electrode_label):
   contacts = np.array(contacts, dtype = np.float64)
   target_point = np.array(target_point)
@@ -155,7 +161,9 @@ def new_label_contacts(target_point, contacts, electrode_label):
   sorted_contact_labels = [contact_labels[i] for i in sorted_indices]
 
   renamed_labels = [sorted_contact_labels[i] for i in range(len(sorted_indices))]
-  print(renamed_labels)
+  
+  rename_index=sorted_nicely(renamed_labels)
+  renamed_labels = [renamed_labels[i] for i in rename_index]
 
   # Update dictionary with new labels
   return np.array(renamed_labels)
