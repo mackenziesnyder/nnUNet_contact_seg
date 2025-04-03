@@ -42,7 +42,7 @@ def array_to_fcsv(coord_array, output_fcsv):
 		out_df['lock'].append(1)
 		out_df['label'].append(str(i+1))
 		out_df['description'].append('elec_type')
-		out_df['associatedNodeID'].append('')
+		out_df['associatedNodeID'].append('vtkMRMLScalarVolumeNode2')
 
 	out_df=pd.DataFrame(out_df)
 	out_df.to_csv(output_fcsv, sep=',', index=False, lineterminator="", mode='a', header=False, float_format = '%.3f')

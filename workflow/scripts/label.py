@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 import os
+import json
 
 # def calculate_distance_to_vector(point, vector_point, vector_direction):
 #     vector_point = np.array(vector_point)
@@ -117,7 +118,7 @@ def calculate_distance_to_line(point, entry, trajectory_vec):
 def assign_contacts_to_electrodes(electrodes, contacts, max_distance_threshold=4.0):
     '''
     Iterates through each "contact" or coordinate segmented by the nnUNet model.
-    Uses the perpendicular distance of contact from the trajectory to assign 
+    Uses the perpendicular distance of contact from the trajectory to assign a contact to an electrode.
     Distance must be within the threshold (set to 4 mm).
     Depending on the accuracy of implantation (according to plan) can result in missed contacts.  
     '''
@@ -146,24 +147,32 @@ def new_label_contacts(target_point, contacts, electrode_label):
   target_point = np.array(target_point)
   # distances = np.linalg.norm(contacts - target_point, axis=1)
   distances = [np.sqrt(np.sum((point - target_point)**2)) for point in contacts]
+
+  inter_contact = [np.linalg.norm(contacts[i] - contacts[i-1]) for i, contact in enumerate(contacts) if i > 0]
+  spacing = round(np.mean(inter_contact))
+
+
   sorted_indices = np.argsort(distances)
+  print(sorted_indices)
 
 #   contact_labels = [f"{electrode_label}{i+1}" for i in range(len(contacts))]
   contact_labels = [f"{electrode_label}-{i+1:02}" for i in range(len(contacts))]
-
-  print(sorted_indices)
   sorted_contact_labels = [contact_labels[i] for i in sorted_indices]
+  print(sorted_contact_labels)
 
   renamed_labels = [sorted_contact_labels[i] for i in range(len(sorted_indices))]
   print(renamed_labels)
 
   # Update dictionary with new labels
-  return np.array(renamed_labels)
+  return np.array(renamed_labels), spacing
 
-def label_multiple_electrodes(electrodes):
+def label_multiple_electrodes(electrodes, manufacturer_dict):
     for electrode in electrodes:
       if electrode['contacts']:
-        electrode['contact_labels'] = new_label_contacts(electrode['target_point'],  electrode['contacts'], electrode['elec_label'])
+        num_contacts = len(electrode['contacts'])
+        print(num_contacts)
+        electrode['contact_labels'], spacing = new_label_contacts(electrode['target_point'],  electrode['contacts'], electrode['elec_label'])
+        electrode['elec_type'] = np.array(manufacturer_dict.get(num_contacts, spacing)*num_contacts)
     return electrodes
 
 def convert_to_df(labelled_final):
@@ -216,7 +225,7 @@ def df_to_fcsv(input_df, output_fcsv):
         out_df['lock'].append(1)
         out_df['label'].append(str(ifid.iloc[3]))
         out_df['description'].append('NA')
-        out_df['associatedNodeID'].append('')
+        out_df['associatedNodeID'].append('vtkMRMLScalarVolumeNode2')
 
     out_df=pd.DataFrame(out_df)
     out_df.to_csv(output_fcsv, sep=',', index=False, lineterminator="", mode='a', header=False, float_format = '%.3f')
@@ -231,10 +240,12 @@ if __name__ == "__main__":
     contact_array = df_contacts[[1, 2, 3]].values
 
     electrode_list = create_electrode_list(df_te)
-    grouped = assign_contacts_to_electrodes(electrode_list, contact_array, 5.0)
+    # grouped = assign_contacts_to_electrodes(electrode_list, contact_array, 5.0)
+    # print(grouped)
     
   # Label contacts for each electrode
-    labelled_contacts = label_multiple_electrodes(electrode_list)
+    manufacturer_dict = json.load(snakemake.params['electrode_type'])
+    labelled_contacts = label_multiple_electrodes(electrode_list, manufacturer_dict)
     labelled_df = convert_to_df(labelled_contacts)
 
     df_to_fcsv(labelled_df, snakemake.output['labelled_coords'])        

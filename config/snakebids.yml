@@ -63,7 +63,11 @@ parse_args:
       Whether predicted coordinates should be labelled by electrode. 
       Requires a 3D Slicer generated .fcsv file, containing the target and entry points for each electrode
     action: 'store_true'
-    default: False  
+    default: False
+  --use_gpu:
+    help: 'Enable gpu for inference by setting resource gpus=1 in run_inference rule (default: %(default)s)'
+    default: False
+    action: 'store_true'  
 
 
 
@@ -72,3 +76,6 @@ containers:
     # fsl: 'docker://brainlife/fsl/6.0.0'
 resource_urls:
   nnUNet_model: 'zenodo.org/records/14519315/files/nnunet_seeg_250_fullres.zip'
+
+#--- workflow specific configuration ---#
+electrode_type: 'resources/electrodes.config'

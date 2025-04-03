@@ -49,6 +49,7 @@ def get_input(wildcards):
 
 def get_cmd_copy_inputs(wildcards, input):
     in_img = input.in_img
+    print(in_img)
     if isinstance(in_img, str):
         # we have one input image
         return f"cp {in_img} tempimg/temp_000_0000.nii.gz"
@@ -178,6 +179,12 @@ rule model_inference:
 
     # shadow:
     #     "minimal"
+    threads: 16
+
+    resources:
+        gpus=1 if config["use_gpu"] else 0,
+        mem_mb=16000,
+        time=30 if config["use_gpu"] else 60,    
     
     group:
         'subj'
@@ -260,6 +267,8 @@ if config['label']:
                 **inputs['post_ct'].wildcards
             )
 
+        params:
+            electrode_type = config['electrode_type']
         group:
             'subj'
         script:
