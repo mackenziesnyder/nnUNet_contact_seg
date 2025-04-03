@@ -3,6 +3,7 @@ import numpy as np
 import re
 import os
 import json
+import math
 
 # def calculate_distance_to_vector(point, vector_point, vector_direction):
 #     vector_point = np.array(vector_point)
@@ -14,6 +15,12 @@ import json
 #     distance_along_vector = np.dot(vector_to_point, unit_vector)
 
 #     return distance_along_vector
+
+def custom_round(value):
+    if value % 1 >= 0.8 or value % 1 <= 0.1:
+        return round(value)
+    elif 0.45 <= value % 1 <= 0.6: 
+        return math.floor(value) + 0.5
 
 def determineFCSVCoordSystem(input_fcsv,overwrite_fcsv=False):
     # need to determine if file is in RAS or LPS
@@ -149,8 +156,9 @@ def new_label_contacts(target_point, contacts, electrode_label):
   distances = [np.sqrt(np.sum((point - target_point)**2)) for point in contacts]
 
   inter_contact = [np.linalg.norm(contacts[i] - contacts[i-1]) for i, contact in enumerate(contacts) if i > 0]
-  spacing = round(np.mean(inter_contact))
-
+  print(np.mean(inter_contact))
+  spacing = custom_round(np.mean(inter_contact))
+  print(spacing)
 
   sorted_indices = np.argsort(distances)
   print(sorted_indices)
