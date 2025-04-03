@@ -268,7 +268,7 @@ if config['label']:
             )
 
         params:
-            electrode_type = config['electrode_type']
+            electrode_type = str(Path(workflow.basedir).parent / config['electrode_type'])
         group:
             'subj'
         script:

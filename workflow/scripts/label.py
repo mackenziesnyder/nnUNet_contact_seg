@@ -158,7 +158,7 @@ def new_label_contacts(target_point, contacts, electrode_label):
 #   contact_labels = [f"{electrode_label}{i+1}" for i in range(len(contacts))]
   contact_labels = [f"{electrode_label}-{i+1:02}" for i in range(len(contacts))]
   sorted_contact_labels = [contact_labels[i] for i in sorted_indices]
-  print(sorted_contact_labels)
+#   print(sorted_contact_labels)
 
   renamed_labels = [sorted_contact_labels[i] for i in range(len(sorted_indices))]
   print(renamed_labels)
@@ -172,7 +172,11 @@ def label_multiple_electrodes(electrodes, manufacturer_dict):
         num_contacts = len(electrode['contacts'])
         print(num_contacts)
         electrode['contact_labels'], spacing = new_label_contacts(electrode['target_point'],  electrode['contacts'], electrode['elec_label'])
-        electrode['elec_type'] = np.array(manufacturer_dict.get(num_contacts, spacing)*num_contacts)
+        if manufacturer_dict.get((num_contacts, spacing)):
+            electrode['elec_type'] = manufacturer_dict.get((num_contacts, spacing))[0]
+        else:
+            electrode['elec_type'] = 'NA'
+        print(electrode['elec_type'])
     return electrodes
 
 def convert_to_df(labelled_final):
@@ -180,9 +184,9 @@ def convert_to_df(labelled_final):
 
   # Iterate through each electrode in the labeled electrodes list
   for electrode in labelled_final:
-      elec_label = electrode.get('elec_label', '')
       contact_labels = electrode.get('contact_labels', [])
       contacts = electrode.get('contacts', [])
+      elec_type = electrode.get('elec_type', [])
 
       # Iterate through each contact and corresponding label
       for label, contact in zip(contact_labels, contacts):
@@ -190,12 +194,14 @@ def convert_to_df(labelled_final):
               'x': contact[0],
               'y': contact[1],
               'z': contact[2],
-              'contact_label': f"{label}",  # Combine electrode label with contact label
+              'contact_label': f"{label}",
+              'elec_type': elec_type
           }
           new_contacts_dicts.append(contact_dict)
 
   # Display the new list of contact dictionaries
   new_df = pd.DataFrame(new_contacts_dicts)
+  new_df.sort_values(by=['contact_label'], inplace = True)
   return new_df
 
 def df_to_fcsv(input_df, output_fcsv):
@@ -224,7 +230,7 @@ def df_to_fcsv(input_df, output_fcsv):
         out_df['sel'].append(1)
         out_df['lock'].append(1)
         out_df['label'].append(str(ifid.iloc[3]))
-        out_df['description'].append('NA')
+        out_df['description'].append(ifid.iloc[4])
         out_df['associatedNodeID'].append('vtkMRMLScalarVolumeNode2')
 
     out_df=pd.DataFrame(out_df)
@@ -240,11 +246,14 @@ if __name__ == "__main__":
     contact_array = df_contacts[[1, 2, 3]].values
 
     electrode_list = create_electrode_list(df_te)
-    # grouped = assign_contacts_to_electrodes(electrode_list, contact_array, 5.0)
-    # print(grouped)
+    grouped = assign_contacts_to_electrodes(electrode_list, contact_array, 5.0)
     
   # Label contacts for each electrode
-    manufacturer_dict = json.load(snakemake.params['electrode_type'])
+    with open(snakemake.params['electrode_type']) as electrode_file:
+        manufacturer_json = json.load(electrode_file)
+
+    manufacturer_dict = {eval(k): v for k, v in manufacturer_json.items()}
+
     labelled_contacts = label_multiple_electrodes(electrode_list, manufacturer_dict)
     labelled_df = convert_to_df(labelled_contacts)
 
