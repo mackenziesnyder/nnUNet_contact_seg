@@ -74,4 +74,3 @@ if __name__ == "__main__":
             out_fcsv=snakemake.output['model_coords']
       )
 
-

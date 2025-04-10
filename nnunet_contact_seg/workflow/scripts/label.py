@@ -266,4 +266,3 @@ if __name__ == "__main__":
     labelled_df = convert_to_df(labelled_contacts)
 
     df_to_fcsv(labelled_df, snakemake.output['labelled_coords'])        
-
