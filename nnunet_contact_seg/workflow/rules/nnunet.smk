@@ -116,7 +116,7 @@ rule model_inference:
         #copy from temp output folder to final output
         "mkdir -p {params.model_dir} {params.in_folder} {params.out_folder} && "
         "{params.cmd_copy_inputs} && "
-        "unzip -n {input.nnUNet_model} -d {params.model_dir} && "
+        "unzip -q -n {input.nnUNet_model} -d {params.model_dir} && "
         "export nnUNet_results={params.model_dir} && "
         "export nnUNet_raw={params.in_folder} && "
         "pwd && "
