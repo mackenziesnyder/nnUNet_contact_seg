@@ -49,7 +49,7 @@ This should display the help message for the CLI. If it doesn’t, ensure that y
 To use the BIDS App, run:
 
 ```
-uv run run.py /path/to/bids/dataset /path/to/output/derivatives
+nnunet_contact_seg /path/to/bids/dataset /path/to/output/derivatives participant --cores all
 ```
 
 Replace /path/to/bids/dataset with the path to your BIDS-compliant input dataset and /path/to/output/derivatives with the desired output directory.

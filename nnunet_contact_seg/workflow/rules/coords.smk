@@ -13,7 +13,7 @@ rule get_coords:
         'subj'
 
     script:
-        './scripts/nnUNet_coords.py'
+        '../scripts/nnUNet_coords.py'
             
 if config['transform']:
 
@@ -37,7 +37,7 @@ if config['transform']:
             'subj'    
 
         script:
-            './scripts/transform_coords.py'
+            '..scripts/transform_coords.py'
 
 if config['label']:
 
@@ -63,4 +63,4 @@ if config['label']:
         group:
             'subj'
         script:
-            './scripts/label.py'
+            '../scripts/label.py'

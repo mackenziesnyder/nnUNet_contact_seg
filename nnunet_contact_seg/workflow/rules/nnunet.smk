@@ -59,6 +59,7 @@ rule model_inference:
         nnUNet_model = get_model()
 
     params:
+        device = "gpu" if config["use_gpu"] else "cpu",
         cmd_copy_inputs = get_cmd_copy_inputs,
         temp_lbl="templbl/temp_000.nii.gz",
         model_dir="tempmodel",
@@ -120,6 +121,6 @@ rule model_inference:
         "export nnUNet_results={params.model_dir} && "
         "export nnUNet_raw={params.in_folder} && "
         "pwd && "
-        "nnUNetv2_predict -d Dataset011_seeg_contacts -i {params.in_folder} -o {params.out_folder} -f 0 -tr nnUNetTrainer_250epochs --disable_tta -c 3d_fullres -p nnUNetPlans &> {log} && "
+        "nnUNetv2_predict -device {params.device} -d Dataset011_seeg_contacts -i {params.in_folder} -o {params.out_folder} -f 0 -tr nnUNetTrainer_250epochs --disable_tta -c 3d_fullres -p nnUNetPlans &> {log} && "
         "echo 'nnUNet prediction complete' && "
         "cp {params.temp_lbl} {output.contact_seg}"
