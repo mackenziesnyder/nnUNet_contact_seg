@@ -42,12 +42,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Clone repo
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ github.event.pull_request.head.sha || github.base_ref }}
-        sparse-checkout: ${{ inputs.sparse-checkout }}
-        sparse-checkout-cone-mode: ${{ inputs.sparse-checkout-cone-mode }}
 
     # Setup & configure dependency manager
     - name: Cache manager installation

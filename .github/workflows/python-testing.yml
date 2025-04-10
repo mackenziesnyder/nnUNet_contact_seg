@@ -16,8 +16,15 @@ jobs:
         run: |
           sudo apt-get install -y graphviz-dev
 
+      - name: Clone repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.base_ref }}
+          sparse-checkout: ${{ inputs.sparse-checkout }}
+          sparse-checkout-cone-mode: ${{ inputs.sparse-checkout-cone-mode }}
+
       - name: Setup Python environment
-        uses: uses: ../../actions/action-setup_task-installPyProject
+        uses: ./actions/action-setup_task-installPyProject
         with:
           python-version: "3.9"
 
