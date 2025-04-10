@@ -37,7 +37,7 @@ if config['transform']:
             'subj'    
 
         script:
-            '..scripts/transform_coords.py'
+            '../scripts/transform_coords.py'
 
 if config['label']:
 

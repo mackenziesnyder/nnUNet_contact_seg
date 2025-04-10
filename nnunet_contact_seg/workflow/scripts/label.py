@@ -156,20 +156,20 @@ def new_label_contacts(target_point, contacts, electrode_label):
   distances = [np.sqrt(np.sum((point - target_point)**2)) for point in contacts]
 
   inter_contact = [np.linalg.norm(contacts[i] - contacts[i-1]) for i, contact in enumerate(contacts) if i > 0]
-  print(np.mean(inter_contact))
+  #print(np.mean(inter_contact))
   spacing = custom_round(np.mean(inter_contact))
-  print(spacing)
+  #print(spacing)
 
   sorted_indices = np.argsort(distances)
-  print(sorted_indices)
+  #print(sorted_indices)
 
 #   contact_labels = [f"{electrode_label}{i+1}" for i in range(len(contacts))]
   contact_labels = [f"{electrode_label}-{i+1:02}" for i in range(len(contacts))]
   sorted_contact_labels = [contact_labels[i] for i in sorted_indices]
-#   print(sorted_contact_labels)
+#   #print(sorted_contact_labels)
 
   renamed_labels = [sorted_contact_labels[i] for i in range(len(sorted_indices))]
-  print(renamed_labels)
+  #print(renamed_labels)
 
   # Update dictionary with new labels
   return np.array(renamed_labels), spacing
@@ -178,13 +178,13 @@ def label_multiple_electrodes(electrodes, manufacturer_dict):
     for electrode in electrodes:
       if electrode['contacts']:
         num_contacts = len(electrode['contacts'])
-        print(num_contacts)
+        #print(num_contacts)
         electrode['contact_labels'], spacing = new_label_contacts(electrode['target_point'],  electrode['contacts'], electrode['elec_label'])
         if manufacturer_dict.get((num_contacts, spacing)):
             electrode['elec_type'] = manufacturer_dict.get((num_contacts, spacing))[0]
         else:
             electrode['elec_type'] = 'NA'
-        print(electrode['elec_type'])
+        #print(electrode['elec_type'])
     return electrodes
 
 def convert_to_df(labelled_final):
