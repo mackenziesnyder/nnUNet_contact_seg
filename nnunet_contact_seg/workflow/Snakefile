@@ -1,7 +1,9 @@
 import snakebids
 from snakebids import bids
 
-configfile: 'config/snakebids.yml'
+
+configfile: "config/snakebids.yml"
+
 
 # Get input wildcards
 inputs = snakebids.generate_inputs(
@@ -12,7 +14,7 @@ inputs = snakebids.generate_inputs(
     derivatives=config.get("derivatives", None),
     participant_label=config.get("participant_label", None),
     exclude_participant_label=config.get("exclude_participant_label", None),
-    validate=not config.get("plugins.validator.skip", False)
+    validate=not config.get("plugins.validator.skip", False),
 )
 
 
@@ -41,4 +43,4 @@ include: "rules/coords.smk"
 
 rule all:
     input:
-        get_final_output()
+        get_final_output(),

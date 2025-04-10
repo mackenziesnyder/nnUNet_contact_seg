@@ -2,6 +2,7 @@ import os
 
 from appdirs import AppDirs
 
+
 def get_download_dir():
     if "nnUNet_SEEG_CACHE_DIR" in os.environ.keys():
         download_dir = os.environ["nnUNet_SEEG_CACHE_DIR"]

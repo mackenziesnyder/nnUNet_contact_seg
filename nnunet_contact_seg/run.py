@@ -4,7 +4,6 @@ from pathlib import Path
 
 from snakebids import bidsapp, plugins
 
-
 if "__file__" not in globals():
     __file__ = "../nnunet_contact_seg/run.py"
 

@@ -35,7 +35,7 @@ dev = [
 ]
 
 [project.scripts]
-nnunet_contact_seg = "nnunet_contact_seg.run:app.run"
+nnUNet_contact_seg = "nnUNet_contact_seg.run:app.run"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -43,6 +43,10 @@ where = ["."]
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.poe.tasks]
+quality_check = { shell = "isort nnunet_contact_seg/*.py -c && black nnunet_contact_seg --check && snakefmt nnunet_contact_seg --check" }
+quality_fix = { shell = "isort nnunet_contact_seg/*.py && black nnunet_contact_seg  && snakefmt nnunet_contact_seg" }
 
 [tool.isort]
 profile = "black"
