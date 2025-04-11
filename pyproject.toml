@@ -35,7 +35,7 @@ dev = [
 ]
 
 [project.scripts]
-nnUNet_contact_seg = "nnUNet_contact_seg.run:app.run"
+nnunet_contact_seg = "nnunet_contact_seg.run:app.run"
 
 [tool.setuptools.packages.find]
 where = ["."]
