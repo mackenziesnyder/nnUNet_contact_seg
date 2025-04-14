@@ -8,31 +8,6 @@ def get_model():
         Path(utils.get_download_dir()) / "model" / Path(local_model).name
     ).absolute()
 
-
-def get_input(wildcards):
-    # post_ct = inputs['post_ct'].expand(
-    #     bids(
-    #             root = config['bids_dir'],
-    #             session = 'post',
-    #             datatype = 'ct',
-    #             suffix = 'ct',
-    #             acq = 'Electrode',
-    #             extension = '.nii.gz',
-    #             **inputs["post_ct"].wildcards
-    #         )
-    # )
-    post_ct = bids(
-        root=config["bids_dir"],
-        suffix="ct",
-        datatype="ct",
-        session="post",
-        acq="Electrode",
-        extension=".nii.gz",
-        **inputs["post_ct"].wildcards,
-    )
-    return post_ct
-
-
 def get_cmd_copy_inputs(wildcards, input):
     in_img = input.in_img
     print(in_img)
@@ -59,7 +34,13 @@ rule download_model:
 
 rule model_inference:
     input:
-        in_img=get_input,
+        in_img=bids(
+            root=config["output_dir"],
+            datatype="registration",
+            space="native",
+            suffix="MNI.nii.gz",
+            **inputs["post_ct"].wildcards,
+        ),
         nnUNet_model=get_model(),
     params:
         device="gpu" if config["use_gpu"] else "cpu",
