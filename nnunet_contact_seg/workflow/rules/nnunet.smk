@@ -10,17 +10,6 @@ def get_model():
 
 
 def get_input(wildcards):
-    # post_ct = inputs['post_ct'].expand(
-    #     bids(
-    #             root = config['bids_dir'],
-    #             session = 'post',
-    #             datatype = 'ct',
-    #             suffix = 'ct',
-    #             acq = 'Electrode',
-    #             extension = '.nii.gz',
-    #             **inputs["post_ct"].wildcards
-    #         )
-    # )
     post_ct = bids(
         root=config["bids_dir"],
         suffix="ct",
@@ -62,21 +51,13 @@ rule model_inference:
         in_img=get_input,
         nnUNet_model=get_model(),
     params:
-        device="gpu" if config["use_gpu"] else "cpu",
+        device="cuda" if config["use_gpu"] else "cpu",
         cmd_copy_inputs=get_cmd_copy_inputs,
         temp_lbl="templbl/temp_000.nii.gz",
         model_dir="tempmodel",
         in_folder="tempimg",
         out_folder="templbl",
     output:
-        # contact_seg =  inputs['post_ct'].expand(
-        #     bids(
-        #         root = config['output_dir'],
-        #         suffix = 'dseg.nii.gz',
-        #         desc = 'contacts_nnUNet',
-        #         **inputs['post_ct'].wildcards
-        #     )
-        # ),
         contact_seg=bids(
             root=config["output_dir"],
             suffix="dseg.nii.gz",
@@ -85,15 +66,8 @@ rule model_inference:
         ),
     log:
         bids(root="logs", suffix="nnUNet.txt", **inputs["post_ct"].wildcards),
-        # inputs['post_ct'].expand(
-        #     bids(
-        #         root="logs",
-        #         suffix="nnUNet.txt",
-        #         **inputs['post_ct'].wildcards,
-        #     ),
-        # )
-    # shadow:
-    #     "minimal"
+    shadow:
+        "minimal"
     threads: 16
     resources:
         gpus=1 if config["use_gpu"] else 0,
