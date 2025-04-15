@@ -1,33 +1,9 @@
-rule n4_bias_correction:
+rule registration:
     input:
-        post_ct = bids(
+        post_ct=bids(
             root=config["bids_dir"],
             suffix="ct",
             datatype="ct",
-            session="post",
-            acq="Electrode",
-            extension=".nii.gz",
-            **inputs["post_ct"].wildcards,
-        )
-    output:
-        corrected_ct=bids(
-            root=config["output_dir"],
-            suffix="ct",
-            datatype="n4_bias_corr",
-            session="post",
-            acq="Electrode",
-            extension=".nii.gz",
-            **inputs["post_ct"].wildcards,
-        ),
-    script:
-        "../scripts/n4_bias_corr.py"
-
-rule registration:
-    input:
-        corrected_ct=bids(
-            root=config["output_dir"],
-            suffix="ct",
-            datatype="n4_bias_corr",
             session="post",
             acq="Electrode",
             extension=".nii.gz",
