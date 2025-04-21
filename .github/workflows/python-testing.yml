@@ -25,13 +25,13 @@ jobs:
           python-version: "3.9"
 
       - name: isort
-        run: uv run isort hippunfold/*.py -c
+        run: uv run isort nnunet_contact_seg/*.py -c
 
       - name: Black
-        run: uv run black hippunfold --check
+        run: uv run black nnunet_contact_seg --check
 
       - name: snakefmt
-        run: uv run snakefmt hippunfold --check
+        run: uv run snakefmt nnunet_contact_seg --check
 
   test:
     runs-on: ubuntu-latest
