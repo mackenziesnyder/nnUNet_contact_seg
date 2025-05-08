@@ -18,13 +18,13 @@ inputs:
     default: "uv"
   install-library:
     description: |
-      Indicate if project library should be installed. 'true' installs from
+      indicate if project library should be installed. 'true' installs from
       cloned repo, false skips install
     required: false
     default: "false"
   install-deps-with:
     description: |
-      Install specified groups with dependency installation. Ignored if
+      install specified groups with dependency installation. Ignored if
       install-deps-only is provided
     required: false
     default: dev
@@ -52,7 +52,8 @@ runs:
         ref: ${{ github.event.pull_request.head.sha || github.base_ref }}
         sparse-checkout: ${{ inputs.sparse-checkout }}
         sparse-checkout-cone-mode: ${{ inputs.sparse-checkout-cone-mode }}
-    
+
+    # Setup & configure dependency manager
     - name: Cache manager installation
       uses: actions/cache@v4
       id: cached-manager
@@ -75,18 +76,13 @@ runs:
       if: inputs.manager == 'uv' && steps.cached-manager.outputs.cache-hit != 'true'
       with:
         version: '0.6.14'
-        enable-cache: false
 
+    # Setup & configure Python
     - name: Setup python
       uses: actions/setup-python@v5
       id: setup-python
       with:
         python-version: ${{ inputs.python-version }}
-
-    - name: Create virtual environment
-      if: inputs.manager == 'uv' && steps.cached-manager.outputs.cache-hit != 'true'
-      shell: bash
-      run: uv venv
 
     # Install dependencies with manager, if necessary
     - name: Install dependencies (with)
@@ -94,10 +90,9 @@ runs:
         inputs.manager == 'uv' && ! inputs.install-deps-only
       shell: bash
       run: >
-        uv pip install -r pyproject.toml --extra ${{ inputs.install-deps-with }}
+        uv sync --all-extras
 
     - name: Install library
       if: inputs.manager == 'uv' && inputs.install-library == 'true'
       shell: bash
-      run: uv pip install -e .
-    
+      run: uv sync
