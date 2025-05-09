@@ -1,5 +1,6 @@
 import ants
 
+# Code is currently not being used - included in case we want to use for the t1w image later on
 
 def n4_bias_correction(input_image_path, output_image_path):
     """
