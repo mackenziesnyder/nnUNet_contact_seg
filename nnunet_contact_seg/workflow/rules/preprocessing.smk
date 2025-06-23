@@ -1,3 +1,26 @@
+rule n4biascorr:
+    input:
+        t1w=bids(
+            root=config["bids_dir"],
+            suffix="T1w",
+            session="pre",
+            run="02",
+            datatype="anat",
+            extension=".nii.gz",
+            **inputs["pre_t1w"].wildcards,
+        ),
+    output:
+        corrected_t1w=bids(
+            root=config["output_dir"],
+            suffix="T1w",
+            desc="n4biascorr",
+            datatype="n4biascorr",
+            extension=".nii.gz",
+            **inputs["pre_t1w"].wildcards,
+        ),
+    script:
+        "../scripts/n4_bias_corr.py"
+
 rule registration:
     input:
         post_ct=bids(
@@ -9,12 +32,11 @@ rule registration:
             extension=".nii.gz",
             **inputs["post_ct"].wildcards,
         ),
-        fixed_t1w = bids(
-            root=config["bids_dir"],
+        fixed_t1w=bids(
+            root=config["output_dir"],
             suffix="T1w",
-            session="pre",
-            run="02",
-            datatype="anat",
+            desc="n4biascorr",
+            datatype="n4biascorr",
             extension=".nii.gz",
             **inputs["pre_t1w"].wildcards,
         ),

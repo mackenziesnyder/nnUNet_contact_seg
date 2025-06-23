@@ -26,4 +26,4 @@ def n4_bias_correction(input_image_path, output_image_path):
     ants.image_write(output_image, output_image_path)
 
 
-n4_bias_correction(snakemake.input.post_ct, snakemake.output.corrected_ct)
+n4_bias_correction(snakemake.input.t1w, snakemake.output.corrected_t1w)
