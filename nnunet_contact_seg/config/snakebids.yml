@@ -24,6 +24,17 @@ pybids_inputs:
     wildcards:
       - subject
       - run
+  pre_t1w:
+    filters:
+      suffix: T1w
+      extension: .nii.gz
+      datatype: anat
+      session: 'pre'
+      run: '02'
+    wildcards:
+      - subject
+      - acquisition
+      - reconstruction
       # - acq
   # target_entry:
   #   filters:
@@ -67,6 +78,10 @@ parse_args:
   --use_gpu:
     help: 'Enable gpu for inference by setting resource gpus=1 in run_inference rule (default: %(default)s)'
     default: False
+    action: 'store_true'  
+  --qc:
+    help: 'Produces html qc plots to show labelled contacts over the ct and t1w images (default: %(default)s)'
+    default: True
     action: 'store_true'  
 
 

@@ -29,4 +29,16 @@ def get_final_output():
                 )
             )
         )
+    if config["qc"]:
+        final.extend(
+            inputs["post_ct"].expand(
+                bids(
+                    root=config["output_dir"],
+                    datatype="qc",
+                    desc="qc",
+                    suffix=".html",
+                    **inputs["post_ct"].wildcards,
+                )
+            )
+        )
     return final

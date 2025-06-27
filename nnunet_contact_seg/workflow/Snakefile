@@ -39,7 +39,7 @@ wildcard_constraints:
 include: "rules/nnunet.smk"
 include: "rules/common.smk"
 include: "rules/coords.smk"
-
+include: "rules/qc.smk"
 
 rule all:
     input:
