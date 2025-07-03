@@ -13,6 +13,7 @@ from nibabel.orientations import aff2axcodes
 import numpy as np
 import csv
 from nilearn import plotting
+from scipy.ndimage import binary_dilation
 from svgutils.compose import Unit
 from svgutils.transform import GroupElement, SVGFigure, fromstring
 
@@ -123,12 +124,11 @@ def load_fcsv_points(fcsv_path):
     with open(fcsv_path, 'r') as f:
         reader = csv.reader(f)
         for row in reader:
+            if len(points) >= 10:
+                break
             if not row or row[0].startswith('#'):
                 continue
             if len(row) < 4 or not row[0].isdigit():
-                continue
-            label = row[11]
-            if not label.startswith("LAHc"):
                 continue
             try:
                 x, y, z = float(row[1]), float(row[2]), float(row[3])
@@ -139,30 +139,32 @@ def load_fcsv_points(fcsv_path):
     print("number of points: ", len(points))
     return np.array(points)
 
-def output_html_file(ct_img_path, t1w_img_path, contact_fcsv_labelled_path, output_html):
+def output_html_file(ct_img_path, t1w_img_path, contacts_path, contact_fcsv_labelled_path, output_html):
     """Processes a single subject's images and generates an HTML output."""
 
-    # ct img
+    # Load CT image
     ct_img = nib.load(ct_img_path)
     ct_img = nib.as_closest_canonical(ct_img)
-    ct_img = nib.Nifti1Image(
-        ct_img.get_fdata().astype(np.float32),
-        header=ct_img.header,
-        affine=ct_img.affine,
-    )
+
+    # Load contact segmentation
+    contact_img = nib.load(contacts_path)
+    contact_img = nib.as_closest_canonical(contact_img)
+
+    # Convert to binary mask
+    contact_data = contact_img.get_fdata() > 0
+
+    # Dilate the mask (3x3x3 cube)
+    dilated_data = binary_dilation(contact_data, iterations=2)
+
+    # Create a new NIfTI image with same affine
+    dilated_contact_img = nib.Nifti1Image(dilated_data.astype(np.float32), affine=contact_img.affine)
 
     # t1w img
     t1w_img = nib.load(t1w_img_path)
     t1w_img = nib.as_closest_canonical(t1w_img)
-    t1w_img = nib.Nifti1Image(
-        t1w_img.get_fdata().astype(np.float32),
-        header=t1w_img.header,
-        affine=t1w_img.affine,
-    )
 
     print("CT orientation:", aff2axcodes(ct_img.affine))
     print("T1w orientation:", aff2axcodes(t1w_img.affine))
-
     print("contact fcsv path: ", contact_fcsv_labelled_path)
     
     # contacts 
@@ -170,13 +172,14 @@ def output_html_file(ct_img_path, t1w_img_path, contact_fcsv_labelled_path, outp
     cut_coords_x = [float(coord[0]) for coord in points]
     cut_coords_y = [float(coord[1]) for coord in points]
     cut_coords_z = [float(coord[2]) for coord in points]
+    print("x-coords: ", cut_coords_x)
+    print("y-coords: ", cut_coords_y)
+    print("z-coords: ", cut_coords_z)
 
     # load the images from file paths
     print("CT shape / affine:", ct_img.shape, ct_img.affine)
     print("T1w shape / affine:", t1w_img.shape, t1w_img.affine)
-    print("CT world X bounds:", ct_img.affine @ [0, 0, 0, 1], ct_img.affine @ [ct_img.shape[0]-1, 0, 0, 1])
-    print("CT world Y bounds:", ct_img.affine @ [0, ct_img.shape[1]-1, 0, 1])
-    print("CT world Z bounds:", ct_img.affine @ [0, 0, ct_img.shape[2]-1, 1])
+    print("Contact shape / affine:", contact_img.shape, contact_img.affine)
 
     plot_args_ref = {"dim": -0.5} 
     plot_args_ct = {"dim": -0.5, "vmin": 0, "vmax": 100}  
@@ -185,39 +188,39 @@ def output_html_file(ct_img_path, t1w_img_path, contact_fcsv_labelled_path, outp
 
     # ct as forground:
     display_x_ct = plotting.plot_anat(ct_img, display_mode="x", draw_cross=False, cut_coords=cut_coords_x, **plot_args_ct)
-    display_x_ct.add_markers(marker_coords=points, marker_color='cyan', marker_size=8)
+    display_x_ct.add_overlay(dilated_contact_img, cmap="autumn")
     fg_x_svgs = [fromstring(extract_svg(display_x_ct, 300))]
     display_x_ct.close()
 
-    # display_y_ct = plotting.plot_anat(ct_img, display_mode="y", draw_cross=False, cut_coords=cut_coords_y, **plot_args_ct)
-    # display_y_ct.add_markers(marker_coords=points, marker_color='green', marker_size=8)
-    # fg_y_svgs = [fromstring(extract_svg(display_y_ct, 300))]
-    # display_y_ct.close()
+    display_y_ct = plotting.plot_anat(ct_img, display_mode="y", draw_cross=False, cut_coords=cut_coords_y, **plot_args_ct)
+    display_y_ct.add_overlay(dilated_contact_img, cmap="autumn")
+    fg_y_svgs = [fromstring(extract_svg(display_y_ct, 300))]
+    display_y_ct.close()
 
     # display_z_ct = plotting.plot_anat(ct_img, display_mode="z", draw_cross=False, cut_coords=cut_coords_z, **plot_args_ct)
-    # display_z_ct.add_markers(marker_coords=points, marker_color='red', marker_size=8)
+    # display_z_ct.add_overlay(contact_img, cmap="autumn")
     # fg_z_svgs = [fromstring(extract_svg(display_z_ct, 300))]
     # display_z_ct.close()
 
     # t1w image as background
     display_x_t1w = plotting.plot_anat(t1w_img, display_mode="x", draw_cross=False, cut_coords=cut_coords_x, **plot_args_ref)
-    # display_x_t1w.add_overlay(contact_img, cmap="Reds", alpha=1.0)
+    # display_x_t1w.add_overlay(contact_img, cmap="autumn", alpha=1.0)
     bg_x_svgs = [fromstring(extract_svg(display_x_t1w, 300))]
     display_x_t1w.close()
 
-    # display_y = plotting.plot_anat(t1w_img, display_mode="y", draw_cross=False, cut_coords=cut_coords_y, **plot_args_ref)
-    # # plotting.plot_roi(contact_img, display=display_y, cmap="Reds", alpha=1.0)
-    # bg_y_svgs = [fromstring(extract_svg(display_y, 300))]
-    # display_y.close()
+    display_y = plotting.plot_anat(t1w_img, display_mode="y", draw_cross=False, cut_coords=cut_coords_y, **plot_args_ref)
+    # plotting.plot_roi(contact_img, display=display_y, cmap="Reds", alpha=1.0)
+    bg_y_svgs = [fromstring(extract_svg(display_y, 300))]
+    display_y.close()
 
-    # display_z = plotting.plot_anat(t1w_img, display_mode="z", draw_cross=False, cut_coords=cut_coords_z, **plot_args_ref)
-    # # plotting.plot_roi(contact_img, display=display_z, cmap="Reds", alpha=1.0)
+    # display_z = plotting.plot_anat(t1w_img, display_mode="z", draw_cross=False, **plot_args_ref)
+    # # # plotting.plot_roi(contact_img, display=display_z, cmap="Reds", alpha=1.0)
     # bg_z_svgs = [fromstring(extract_svg(display_z, 300))]
     # display_z.close()
 
     # generate final SVGs by overlaying foreground and background
     final_svg_x = "\n".join(clean_svg(fg_x_svgs, bg_x_svgs))
-    # final_svg_y = "\n".join(clean_svg(fg_y_svgs, bg_y_svgs))
+    final_svg_y = "\n".join(clean_svg(fg_y_svgs, bg_y_svgs))
     # final_svg_z = "\n".join(clean_svg(fg_z_svgs, bg_z_svgs))
 
     #display results
@@ -227,6 +230,7 @@ def output_html_file(ct_img_path, t1w_img_path, contact_fcsv_labelled_path, outp
                 <center>
                     <h3 style="font-size:42px">CT and T1w Img</h3>
                     <p>{final_svg_x}</p>
+                    <p>{final_svg_y}</p>
                     <hr style="height:4px;border-width:0;color:black;background-color:black;margin:30px;">
                 </center>
             </body></html>
@@ -241,4 +245,4 @@ if __name__ == "__main__":
     contact_fcsv_labelled_path = snakemake.input["contact_fcsv_labelled"]
     output_html = snakemake.output["html"]
 
-    output_html_file(ct_img_path,t1w_img_path,contact_fcsv_labelled_path,output_html)
+    output_html_file(ct_img_path,t1w_img_path,contact_seg_path,contact_fcsv_labelled_path,output_html)
