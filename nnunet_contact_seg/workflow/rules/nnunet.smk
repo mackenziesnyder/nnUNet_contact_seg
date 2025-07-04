@@ -9,17 +9,6 @@ def get_model():
     ).absolute()
 
 
-def get_input(wildcards):
-    post_ct = bids(
-        root=config["output_dir"],
-        datatype="registration",
-        space="T1w",
-        suffix="ct.nii.gz",
-        **inputs["post_ct"].wildcards,
-    ),
-    return post_ct
-
-
 def get_cmd_copy_inputs(wildcards, input):
     in_img = input.in_img
     print(in_img)
@@ -46,11 +35,11 @@ rule download_model:
 
 rule model_inference:
     input:
-        in_img=bids(
+        in_img = bids(
             root=config["output_dir"],
             datatype="registration",
-            space="native",
-            suffix="MNI.nii.gz",
+            space="T1w",
+            suffix="ct.nii.gz",
             **inputs["post_ct"].wildcards,
         ),
         nnUNet_model=get_model(),

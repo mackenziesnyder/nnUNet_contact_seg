@@ -48,9 +48,9 @@ def extract_svg(display_object, dpi=250):
     return image_svg[start_idx:end_idx]
 
 
-def clean_svg(fg_svgs, bg_svgs, ref=0):
-    # Find and replace the figure_1 id.
-    svgs = bg_svgs + fg_svgs
+def clean_svg(bg1_svgs, bg2_svgs, ref=0):
+    # Expecting exactly one slice per direction in each group
+    svgs = bg1_svgs + bg2_svgs
     roots = [f.getroot() for f in svgs]
 
     sizes = []
@@ -59,35 +59,27 @@ def clean_svg(fg_svgs, bg_svgs, ref=0):
         width = int(viewbox[2])
         height = int(viewbox[3])
         sizes.append((width, height))
-    nsvgs = len([bg_svgs])
 
     sizes = np.array(sizes)
-
-    # Calculate the scale to fit all widths
     width = sizes[ref, 0]
     scales = width / sizes[:, 0]
     heights = sizes[:, 1] * scales
 
-    # Compose the views panel: total size is the width of
-    # any element (used the first here) and the sum of heights
+    # Total height based on number of slices in bg1
+    nsvgs = len(bg1_svgs)
     fig = SVGFigure(Unit(f"{width}px"), Unit(f"{heights[:nsvgs].sum()}px"))
 
     yoffset = 0
     for i, r in enumerate(roots):
         r.moveto(0, yoffset, scale_x=scales[i])
-        if i == (nsvgs - 1):
-            yoffset = 0
-        else:
+        if i < nsvgs - 1:
             yoffset += heights[i]
 
-    # Group background and foreground panels in two groups
-    if fg_svgs:
-        newroots = [
-            GroupElement(roots[:nsvgs], {"class": "background-svg"}),
-            GroupElement(roots[nsvgs:], {"class": "foreground-svg"}),
-        ]
-    else:
-        newroots = roots
+    # Create two background groups for blending
+    newroots = [
+        GroupElement(roots[:nsvgs], {"class": "background-svg ct"}),
+        GroupElement(roots[nsvgs:], {"class": "background-svg t1w"}),
+    ]
 
     fig.append(newroots)
     fig.root.attrib.pop("width", None)
@@ -97,25 +89,37 @@ def clean_svg(fg_svgs, bg_svgs, ref=0):
     with TemporaryDirectory() as tmpdirname:
         out_file = Path(tmpdirname) / "tmp.svg"
         fig.save(str(out_file))
-        # Post processing
         svg = out_file.read_text().splitlines()
 
-    # Remove <?xml... line
     if svg[0].startswith("<?xml"):
         svg = svg[1:]
 
-    # Add styles for the flicker animation
-    if fg_svgs:
-        svg.insert(
-            2,
-            """\
-<style type="text/css">
-@keyframes flickerAnimation%s { 0%% {opacity: 1;} 100%% { opacity:0; }}
-.foreground-svg { animation: 1s ease-in-out 0s alternate none infinite running flickerAnimation%s;}
-.foreground-svg:hover { animation-play-state: running;}
-</style>"""
-            % tuple([uuid4()] * 2),
-        )
+    svg.insert(
+        2,
+        """\
+        <style type="text/css">
+        .background-svg.ct {
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+        .background-svg.t1w {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        </style>
+        <script>
+        function updateBlend(slider) {
+            const alpha = parseFloat(slider.value) / 100;
+            document.querySelectorAll('.background-svg.ct').forEach(el => {
+                el.style.opacity = 1 - alpha;
+            });
+            document.querySelectorAll('.background-svg.t1w').forEach(el => {
+                el.style.opacity = alpha;
+            });
+        }
+        </script>
+        """
+    )
 
     return svg
 
@@ -182,46 +186,43 @@ def output_html_file(ct_img_path, t1w_img_path, contacts_path, contact_fcsv_labe
     print("Contact shape / affine:", contact_img.shape, contact_img.affine)
 
     plot_args_ref = {"dim": -0.5} 
-    plot_args_ct = {"dim": -0.5, "vmin": 0, "vmax": 100}  
+    plot_args_ct = {"dim": -0.5, "vmin": 0, "vmax": 100}    
 
-    # Generate foreground and background images
+    # For CT + contacts overlays (background group 1)
+    display_x_ct_contacts = plotting.plot_anat(ct_img, display_mode="x", draw_cross=False, cut_coords=cut_coords_x, **plot_args_ct)
+    display_x_ct_contacts.add_overlay(dilated_contact_img, cmap="autumn")
+    bg_x_ct_contacts_svgs = [fromstring(extract_svg(display_x_ct_contacts, 300))]
+    display_x_ct_contacts.close()
 
-    # ct as forground:
-    display_x_ct = plotting.plot_anat(ct_img, display_mode="x", draw_cross=False, cut_coords=cut_coords_x, **plot_args_ct)
-    display_x_ct.add_overlay(dilated_contact_img, cmap="autumn")
-    fg_x_svgs = [fromstring(extract_svg(display_x_ct, 300))]
-    display_x_ct.close()
+    display_y_ct_contacts = plotting.plot_anat(ct_img, display_mode="y", draw_cross=False, cut_coords=cut_coords_y, **plot_args_ct)
+    display_y_ct_contacts.add_overlay(dilated_contact_img, cmap="autumn")
+    bg_y_ct_contacts_svgs = [fromstring(extract_svg(display_y_ct_contacts, 300))]
+    display_y_ct_contacts.close()
 
-    display_y_ct = plotting.plot_anat(ct_img, display_mode="y", draw_cross=False, cut_coords=cut_coords_y, **plot_args_ct)
-    display_y_ct.add_overlay(dilated_contact_img, cmap="autumn")
-    fg_y_svgs = [fromstring(extract_svg(display_y_ct, 300))]
-    display_y_ct.close()
+    display_z_ct_contacts = plotting.plot_anat(ct_img, display_mode="z", draw_cross=False, cut_coords=cut_coords_z, **plot_args_ct)
+    display_z_ct_contacts.add_overlay(dilated_contact_img, cmap="autumn")
+    bg_z_ct_contacts_svgs = [fromstring(extract_svg(display_z_ct_contacts, 300))]
+    display_z_ct_contacts.close()
 
-    display_z_ct = plotting.plot_anat(ct_img, display_mode="z", draw_cross=False, cut_coords=cut_coords_z, **plot_args_ct)
-    display_z_ct.add_overlay(contact_img, cmap="autumn")
-    fg_z_svgs = [fromstring(extract_svg(display_z_ct, 300))]
-    display_z_ct.close()
+    # For T1w + contacts overlays (background group 2)
+    display_x_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="x", draw_cross=False, cut_coords=cut_coords_x, **plot_args_ref)
+    display_x_t1w_contacts.add_overlay(dilated_contact_img, cmap="autumn")
+    bg_x_t1w_contacts_svgs = [fromstring(extract_svg(display_x_t1w_contacts, 300))]
+    display_x_t1w_contacts.close()
 
-    # t1w image as background
-    display_x_t1w = plotting.plot_anat(t1w_img, display_mode="x", draw_cross=False, cut_coords=cut_coords_x, **plot_args_ref)
-    # display_x_t1w.add_overlay(contact_img, cmap="autumn", alpha=1.0)
-    bg_x_svgs = [fromstring(extract_svg(display_x_t1w, 300))]
-    display_x_t1w.close()
+    display_y_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="y", draw_cross=False, cut_coords=cut_coords_y, **plot_args_ref)
+    display_y_t1w_contacts.add_overlay(dilated_contact_img, cmap="autumn")
+    bg_y_t1w_contacts_svgs = [fromstring(extract_svg(display_y_t1w_contacts, 300))]
+    display_y_t1w_contacts.close()
 
-    display_y = plotting.plot_anat(t1w_img, display_mode="y", draw_cross=False, cut_coords=cut_coords_y, **plot_args_ref)
-    # plotting.plot_roi(contact_img, display=display_y, cmap="Reds", alpha=1.0)
-    bg_y_svgs = [fromstring(extract_svg(display_y, 300))]
-    display_y.close()
+    display_z_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="z", draw_cross=False, cut_coords=cut_coords_z, **plot_args_ref)
+    display_z_t1w_contacts.add_overlay(dilated_contact_img, cmap="autumn")
+    bg_z_t1w_contacts_svgs = [fromstring(extract_svg(display_z_t1w_contacts, 300))]
+    display_z_t1w_contacts.close()
 
-    display_z = plotting.plot_anat(t1w_img, display_mode="z", draw_cross=False, cut_coords=cut_coords_z, **plot_args_ref)
-    # # # plotting.plot_roi(contact_img, display=display_z, cmap="Reds", alpha=1.0)
-    bg_z_svgs = [fromstring(extract_svg(display_z, 300))]
-    display_z.close()
-
-    # generate final SVGs by overlaying foreground and background
-    final_svg_x = "\n".join(clean_svg(fg_x_svgs, bg_x_svgs))
-    final_svg_y = "\n".join(clean_svg(fg_y_svgs, bg_y_svgs))
-    final_svg_z = "\n".join(clean_svg(fg_z_svgs, bg_z_svgs))
+    final_svg_x = "\n".join(clean_svg(bg_x_ct_contacts_svgs, bg_x_t1w_contacts_svgs))
+    final_svg_y = "\n".join(clean_svg(bg_y_ct_contacts_svgs, bg_y_t1w_contacts_svgs))
+    final_svg_z = "\n".join(clean_svg(bg_z_ct_contacts_svgs, bg_z_t1w_contacts_svgs))
 
     #display results
     with open(output_html, "w") as f:
@@ -229,6 +230,10 @@ def output_html_file(ct_img_path, t1w_img_path, contacts_path, contact_fcsv_labe
             <html><body>
                 <center>
                     <h3 style="font-size:42px">CT and T1w Img</h3>
+                    <p style="margin:20px;">
+                        <label for="blendSlider" style="font-size:18px;">CT ↔ T1w:</label>
+                        <input id="blendSlider" type="range" min="0" max="100" value="0" oninput="updateBlend(this)" style="width: 300px; vertical-align: middle;">
+                    </p>
                     <p>{final_svg_x}</p>
                     <p>{final_svg_y}</p>
                     <p>{final_svg_z}</p>
