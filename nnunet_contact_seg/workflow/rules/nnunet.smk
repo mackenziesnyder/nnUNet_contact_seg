@@ -11,14 +11,12 @@ def get_model():
 
 def get_input(wildcards):
     post_ct = bids(
-        root=config["bids_dir"],
-        suffix="ct",
-        datatype="ct",
-        session="post",
-        acq="Electrode",
-        extension=".nii.gz",
+        root=config["output_dir"],
+        datatype="registration",
+        space="T1w",
+        suffix="ct.nii.gz",
         **inputs["post_ct"].wildcards,
-    )
+    ),
     return post_ct
 
 

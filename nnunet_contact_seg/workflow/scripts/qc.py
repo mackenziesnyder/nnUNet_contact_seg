@@ -197,10 +197,10 @@ def output_html_file(ct_img_path, t1w_img_path, contacts_path, contact_fcsv_labe
     fg_y_svgs = [fromstring(extract_svg(display_y_ct, 300))]
     display_y_ct.close()
 
-    # display_z_ct = plotting.plot_anat(ct_img, display_mode="z", draw_cross=False, cut_coords=cut_coords_z, **plot_args_ct)
-    # display_z_ct.add_overlay(contact_img, cmap="autumn")
-    # fg_z_svgs = [fromstring(extract_svg(display_z_ct, 300))]
-    # display_z_ct.close()
+    display_z_ct = plotting.plot_anat(ct_img, display_mode="z", draw_cross=False, cut_coords=cut_coords_z, **plot_args_ct)
+    display_z_ct.add_overlay(contact_img, cmap="autumn")
+    fg_z_svgs = [fromstring(extract_svg(display_z_ct, 300))]
+    display_z_ct.close()
 
     # t1w image as background
     display_x_t1w = plotting.plot_anat(t1w_img, display_mode="x", draw_cross=False, cut_coords=cut_coords_x, **plot_args_ref)
@@ -213,15 +213,15 @@ def output_html_file(ct_img_path, t1w_img_path, contacts_path, contact_fcsv_labe
     bg_y_svgs = [fromstring(extract_svg(display_y, 300))]
     display_y.close()
 
-    # display_z = plotting.plot_anat(t1w_img, display_mode="z", draw_cross=False, **plot_args_ref)
+    display_z = plotting.plot_anat(t1w_img, display_mode="z", draw_cross=False, cut_coords=cut_coords_z, **plot_args_ref)
     # # # plotting.plot_roi(contact_img, display=display_z, cmap="Reds", alpha=1.0)
-    # bg_z_svgs = [fromstring(extract_svg(display_z, 300))]
-    # display_z.close()
+    bg_z_svgs = [fromstring(extract_svg(display_z, 300))]
+    display_z.close()
 
     # generate final SVGs by overlaying foreground and background
     final_svg_x = "\n".join(clean_svg(fg_x_svgs, bg_x_svgs))
     final_svg_y = "\n".join(clean_svg(fg_y_svgs, bg_y_svgs))
-    # final_svg_z = "\n".join(clean_svg(fg_z_svgs, bg_z_svgs))
+    final_svg_z = "\n".join(clean_svg(fg_z_svgs, bg_z_svgs))
 
     #display results
     with open(output_html, "w") as f:
@@ -231,6 +231,7 @@ def output_html_file(ct_img_path, t1w_img_path, contacts_path, contact_fcsv_labe
                     <h3 style="font-size:42px">CT and T1w Img</h3>
                     <p>{final_svg_x}</p>
                     <p>{final_svg_y}</p>
+                    <p>{final_svg_z}</p>
                     <hr style="height:4px;border-width:0;color:black;background-color:black;margin:30px;">
                 </center>
             </body></html>

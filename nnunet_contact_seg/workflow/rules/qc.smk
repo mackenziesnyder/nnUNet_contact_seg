@@ -1,20 +1,17 @@
 rule qc:
     input: 
         ct_img=bids(
-            root=config["bids_dir"],
-            suffix="ct",
-            datatype="ct",
-            session="post",
-            acq="Electrode",
-            extension=".nii.gz",
+            root=config["output_dir"],
+            datatype="registration",
+            space="T1w",
+            suffix="ct.nii.gz",
             **inputs["post_ct"].wildcards,
         ),
         t1w_img=bids(
-            root=config["bids_dir"],
+            root=config["output_dir"],
             suffix="T1w",
-            session="pre",
-            run="02",
-            datatype="anat",
+            desc="n4biascorr",
+            datatype="n4biascorr",
             extension=".nii.gz",
             **inputs["pre_t1w"].wildcards,
         ),
@@ -26,7 +23,7 @@ rule qc:
         ),
         contact_fcsv_labelled=bids(
             root=config["output_dir"],
-            suffix="labelled_nnUNet.fcsv",
+            suffix="nnUNet.fcsv",
             **inputs["post_ct"].wildcards,
         ),
     output: 

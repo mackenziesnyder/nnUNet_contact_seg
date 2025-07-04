@@ -19,7 +19,9 @@ if config["transform"]:
         input:
             coords=rules.get_coords.output.model_coords,
             transformation_matrix=bids(
-                root=config["bids_dir"],
+                root=config["output_dir"],
+                datatype="registration",
+                space="T1w",
                 suffix="xfm",
                 extension=".txt",
                 **inputs["post_ct"].wildcards,
