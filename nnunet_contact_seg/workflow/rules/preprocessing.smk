@@ -44,22 +44,22 @@ rule registration:
         xfm_slicer=bids(
             root=config["output_dir"],
             datatype="registration",
-            space="native",
+            space="T1w",
             suffix="slicer.mat",
             **inputs["post_ct"].wildcards,
         ),
         xfm_ras=bids(
             root=config["output_dir"],
             datatype="registration",
-            space="native",
+            space="T1w",
             suffix="xfm.txt",
             **inputs["post_ct"].wildcards,
         ),
         out_im=bids(
             root=config["output_dir"],
             datatype="registration",
-            space="native",
-            suffix="MNI.nii.gz",
+            space="T1w",
+            suffix="ct.nii.gz",
             **inputs["post_ct"].wildcards,
         ),
     script:

@@ -21,7 +21,7 @@ if config["transform"]:
             transformation_matrix = bids(
                 root=config["output_dir"],
                 datatype="registration",
-                space="native",
+                space="T1w",
                 suffix="xfm.txt",
                 **inputs["post_ct"].wildcards,
             ),
