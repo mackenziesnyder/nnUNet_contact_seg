@@ -36,12 +36,14 @@ rule download_model:
 rule model_inference:
     input:
         in_img = bids(
-            root=config["output_dir"],
-            datatype="registration",
-            space="T1w",
-            suffix="ct.nii.gz",
+            root=config["bids_dir"],
+            suffix="ct",
+            datatype="ct",
+            session="post",
+            acq="Electrode",
+            extension=".nii.gz",
             **inputs["post_ct"].wildcards,
-        ),
+        )
         nnUNet_model=get_model(),
     params:
         device="cuda" if config["use_gpu"] else "cpu",
