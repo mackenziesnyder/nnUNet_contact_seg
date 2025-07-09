@@ -43,7 +43,7 @@ rule model_inference:
             acq="Electrode",
             extension=".nii.gz",
             **inputs["post_ct"].wildcards,
-        )
+        ),
         nnUNet_model=get_model(),
     params:
         device="cuda" if config["use_gpu"] else "cpu",

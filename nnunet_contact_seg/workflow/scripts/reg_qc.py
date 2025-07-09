@@ -186,7 +186,7 @@ def output_html_file(ct_img_path, t1w_img_path, contacts_path, contact_fcsv_labe
     print("Contact shape / affine:", contact_img.shape, contact_img.affine)
 
     plot_args_ref = {"dim": -0.5} 
-    plot_args_ct = {"dim": -0.5, "vmin": 0, "vmax": 100}    
+    plot_args_ct = {"dim": -0.5, "vmin": 0, "vmax": 2000}    
 
     # For CT + contacts overlays (background group 1)
     display_x_ct_contacts = plotting.plot_anat(ct_img, display_mode="x", draw_cross=False, cut_coords=cut_coords_x, **plot_args_ct)
