@@ -282,9 +282,18 @@ def render_oblique_slice_to_svg(img, entry_world, exit_world, points, **args):
 
 def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_fcsv_labelled_path,output_html):
 
+    # map_labels = {
+    #     "LAHc": "Left Anterior Hippocampus",
+
+    # }
     # Load CT image
     ct_img = nib.load(ct_img_path)
     ct_img = nib.as_closest_canonical(ct_img)
+
+    match = re.search(r"(sub-P\d+)", ct_img_path)
+    if match:
+        subject_id = match.group(1)
+        print(subject_id)
 
     # t1w img
     t1w_img = nib.load(t1w_img_path)
@@ -296,10 +305,10 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
 
     html_parts = []
     
-    # for i, (label, points) in enumerate(contacts.items()):
-    for label, points in contacts.items():
-        # if i == 1:
-        #     break
+    for i, (label, points) in enumerate(contacts.items()):
+    # for label, points in contacts.items():
+        if i == 3:
+            break
         
         # axial, sagittal, coronal views taken at the middle contacts slice
         middle_index = len(points) // 2
@@ -359,11 +368,33 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
         html_parts.append(f"""
             <div style="margin-bottom: 40px;">
                 <p style="font-size:20px;"><b>{label}</b></p>
-                <div style="display: flex; justify-content: center; gap: 10px;">
-                    <div style="width: 400px;">{final_svg_x}</div>
-                    <div style="width: 400px;">{final_svg_y}</div>
-                    <div style="width: 400px;">{final_svg_z}</div>
-                    <div style="width: 400px;">{final_svg_oblique}</div>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 10px; text-align: center; background-color: black;">
+                    <div style="width: 400px;">
+                        {final_svg_x}
+                    </div>
+                    <div style="width: 400px;">
+                        {final_svg_y}
+                    </div>
+                    <div style="width: 400px;">
+                        {final_svg_z}
+                    </div>
+                    <div style="width: 400px;">
+                        {final_svg_oblique}
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 10px; text-align: center;">
+                    <div style="width: 400px; ">
+                        <p>Sagittal Slice</p>
+                    </div>
+                    <div style="width: 400px;">
+                        <p>Coronal Slice</p>
+                    </div>
+                    <div style="width: 400px;">
+                        <p>Axial Slice</p>
+                    </div>
+                    <div style="width: 400px;">
+                        <p>Slice along the trajectory with fixed coronal plane from planned entry -> exit</p>
+                    </div>
                 </div>
                 <hr style="height:4px;border-width:0;color:black;background-color:black;margin-top:30px;">
             </div>
@@ -371,19 +402,42 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
 
         print("finished label: ", label)
 
-        # i += 1
+        i += 1
     with open(output_html, "w") as f:
         f.write(f"""
-        <html><body>
-            <center>
-                <h3 style="font-size:42px">CT and T1w Img</h3>
-                <p style="margin:20px;">
+        <html>
+        <head>
+            <style>
+                #sliderContainer {{
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    background-color: white;
+                    padding: 20px;
+                    text-align: center;
+                    z-index: 1000;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                }}
+                body {{
+                    margin-top: 100px;  
+                }}
+            </style>
+        </head>
+        <body>
+            <div id="sliderContainer">
+                <h3 style="font-size:42px; margin: 0;">{subject_id} Labelled Contacts</h3>
+                <p style="margin:10px;">
                     <label for="blendSlider" style="font-size:18px;">CT ↔ T1w:</label>
-                    <input id="blendSlider" type="range" min="0" max="100" value="0" oninput="updateBlend(this)" style="width: 300px; vertical-align: middle;">
+                    <input id="blendSlider" type="range" min="0" max="100" value="0"
+                        oninput="updateBlend(this)" style="width: 300px; vertical-align: middle;">
                 </p>
+            </div>
+            <center style="padding-top:40px;">
                 {''.join(html_parts)}
             </center>
-        </body></html>
+        </body>
+        </html>
         """)
 
     print(f"HTML output saved to {output_html}")
