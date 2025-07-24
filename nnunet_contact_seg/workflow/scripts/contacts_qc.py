@@ -11,6 +11,7 @@ from svgutils.transform import GroupElement, SVGFigure, fromstring
 from scipy.ndimage import map_coordinates
 import matplotlib.pyplot as plt
 import io
+from label_map import convert_acronym_to_words
 
 # reused from degad code
 def svg2str(display_object, dpi):
@@ -282,10 +283,6 @@ def render_oblique_slice_to_svg(img, entry_world, exit_world, points, **args):
 
 def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_fcsv_labelled_path,output_html):
 
-    # map_labels = {
-    #     "LAHc": "Left Anterior Hippocampus",
-
-    # }
     # Load CT image
     ct_img = nib.load(str(ct_img_path))
     ct_img = nib.as_closest_canonical(ct_img)
@@ -365,9 +362,11 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
         final_svg_z = "\n".join(clean_svgs([bg_z_ct_contacts_svgs], [bg_z_t1w_contacts_svgs]))
         final_svg_oblique = "\n".join(clean_svgs([svg_oblique_ct], [svg_oblique_t1w]))
 
+        label_long = convert_acronym_to_words(label)
+
         html_parts.append(f"""
             <div style="margin-bottom: 40px;">
-                <p style="font-size:20px;"><b>{label}</b></p>
+                <p style="font-size:20px;"><b>{label_long}</b></p>
                 <div style="display: flex; justify-content: center; align-items: center; gap: 10px; text-align: center; background-color: black;">
                     <div style="width: 400px;">
                         {final_svg_x}
