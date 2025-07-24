@@ -79,22 +79,10 @@ parse_args:
     help: 'Enable gpu for inference by setting resource gpus=1 in run_inference rule (default: %(default)s)'
     default: False
     action: 'store_true'  
-  --reg_qc:
-    help: 'Produces html qc plots to show the registration of the ct to the t1w image (default: %(default)s)'
-    default: False
-    action: 'store_true' 
-  --contacts_qc:
-    help: 'Produces html qc plots to show labelled contacts over the ct and t1w images (default: %(default)s)'
-    default: False
-    action: 'store_true' 
-  --contacts_fcsv_planned:
-    help: 'Path to planned contact path fcsv. Necessary for the contact fcsv html output.'
-    default: False
-    type: str
-  --reg_matrix_path:
+  --manual_reg_matrix:
     help: 'Path to .txt file with the registration matrix.'
     default: False
-    type: str
+    action: 'store_true'
 
 
 
