@@ -13,6 +13,7 @@ import os
 import json
 import math
 
+
 def custom_round(value):
     if value % 1 >= 0.8 or value % 1 <= 0.1:
         return round(value)
@@ -182,9 +183,9 @@ def assign_contacts_to_electrodes(electrodes, contacts, max_distance_threshold=4
 
 def new_label_contacts(target_point, contacts):
     contacts = np.array(contacts, dtype=np.float64)
-    
+
     target_point = np.array(target_point)
-    
+
     distances = [np.sqrt(np.sum((point - target_point) ** 2)) for point in contacts]
 
     sorted_indices = np.argsort(distances)
@@ -198,7 +199,7 @@ def new_label_contacts(target_point, contacts):
     ]
 
     spacing = custom_round(np.mean(inter_contact))
-    
+
     return np.array(sorted_contacts), spacing
 
 
@@ -209,10 +210,11 @@ def label_multiple_electrodes(electrodes, manufacturer_dict):
             # print(num_contacts)
 
             electrode["sorted_contacts"], spacing = new_label_contacts(
-                electrode["target_point"],
-                electrode["contacts"]
+                electrode["target_point"], electrode["contacts"]
             )
-            electrode['contact_labels'] = [f"{electrode['elec_label']}-{i+1:02}" for i in range(num_contacts)]
+            electrode["contact_labels"] = [
+                f"{electrode['elec_label']}-{i+1:02}" for i in range(num_contacts)
+            ]
 
             if manufacturer_dict.get((num_contacts, spacing)):
                 electrode["elec_type"] = manufacturer_dict.get((num_contacts, spacing))[
