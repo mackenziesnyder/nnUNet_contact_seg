@@ -21,7 +21,7 @@ rule n4biascorr:
     script:
         "../scripts/n4_bias_corr.py"
 
-rule registration:
+rule get_registration_matrix:
     input:
         post_ct=bids(
             root=config["bids_dir"],
@@ -63,4 +63,4 @@ rule registration:
             **inputs["post_ct"].wildcards,
         ),
     script:
-        "../scripts/regis_script.py"
+        "../scripts/registration.py"

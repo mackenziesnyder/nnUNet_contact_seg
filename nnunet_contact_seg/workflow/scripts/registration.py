@@ -57,7 +57,7 @@ def antsmat2mat(transform, m_center):
     return ras_inmatrix
 
 
-def registration(fixed_image, moving_image, out_im, xfm_ras, xfm_slicer):
+def registration(fixed_image, moving_image, xfm_ras, xfm_slicer, out_im):
     """
     Function that performs registration.
 
@@ -113,7 +113,7 @@ def registration(fixed_image, moving_image, out_im, xfm_ras, xfm_slicer):
 registration(
     moving_image=snakemake.input.post_ct,
     fixed_image=snakemake.input.fixed_t1w,
-    out_im=snakemake.output.out_im,
     xfm_ras=snakemake.output.xfm_ras,
     xfm_slicer=snakemake.output.xfm_slicer,
+    out_im=snakemake.output.out_im
 )

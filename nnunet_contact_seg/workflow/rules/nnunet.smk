@@ -57,6 +57,7 @@ rule model_inference:
             root=config["output_dir"],
             suffix="dseg.nii.gz",
             desc="contacts_nnUNet",
+            datatype="contact_seg",
             **inputs["post_ct"].wildcards,
         ),
     log:

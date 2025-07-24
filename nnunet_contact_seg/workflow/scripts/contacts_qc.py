@@ -287,10 +287,10 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
 
     # }
     # Load CT image
-    ct_img = nib.load(ct_img_path)
+    ct_img = nib.load(str(ct_img_path))
     ct_img = nib.as_closest_canonical(ct_img)
 
-    match = re.search(r"(sub-P\d+)", ct_img_path)
+    match = re.search(r"(sub-P\d+)", str(ct_img_path))
     if match:
         subject_id = match.group(1)
         print(subject_id)
