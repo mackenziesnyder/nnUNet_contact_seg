@@ -87,10 +87,6 @@ parse_args:
     help: 'Produces html qc plots to show labelled contacts over the ct and t1w images (default: %(default)s)'
     default: False
     action: 'store_true' 
-  --contacts_fcsv_planned:
-    help: 'Path to planned contact path fcsv. Necessary for the contact fcsv html output.'
-    default: False
-    type: str
   --reg_matrix_path:
     help: 'Path to .txt file with the registration matrix.'
     default: False

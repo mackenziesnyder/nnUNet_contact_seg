@@ -68,7 +68,12 @@ rule contacts_qc:
             suffix="labelled_nnUNet.fcsv",
             **inputs["post_ct"].wildcards,
         ),
-        contact_fcsv_planned=config["contacts_fcsv_planned"]
+        contact_fcsv_planned=bids(
+                root=config["bids_dir"],
+                suffix="planned",
+                extension=".fcsv",
+                **inputs["post_ct"].wildcards,
+            ),
     output: 
         html=bids(
             root=config["output_dir"],
