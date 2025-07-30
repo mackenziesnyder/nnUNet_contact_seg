@@ -174,7 +174,7 @@ def group_contacts(contact_fcsv_labelled_path):
     return coords_dict
 
 # extract a slice along the trajectory from the entrance to exit point 
-def extract_trajectory_slice(nifti_img, entry, exit, width=40, num_points=256):
+def extract_trajectory_slice(nifti_img, entry, exit, width=40, num_points=128):
     
     # load image and affine
     data = nifti_img.get_fdata()
@@ -201,9 +201,8 @@ def extract_trajectory_slice(nifti_img, entry, exit, width=40, num_points=256):
     v /= np.linalg.norm(v)
     w = np.cross(u, v)
 
-    # extract the points along the width and length of the desired plane
     s_vals = np.linspace(-width/2, width/2, num_points)
-    t_vals = np.linspace(-10, length + 10, num_points)
+    t_vals = np.linspace(-10, length+10, num_points)
     
     # create a gride of these points 
     S, T = np.meshgrid(s_vals, t_vals)
@@ -224,9 +223,10 @@ def extract_trajectory_slice(nifti_img, entry, exit, width=40, num_points=256):
     return slice_img, s_vals, t_vals, u, v, w
 
 def project_point_to_slice(P, entry, u, v, w, thickness=20):
-    
+
     # compute the points distance from the 2d plane
-    distance_from_plane = np.dot(P - entry, w)
+    w_normalized = w / np.linalg.norm(w)
+    distance_from_plane = np.dot(P - entry, w_normalized)
     print(f"distance from plane for {P}: {distance_from_plane}")
     
     # if close to the trajectory line (still within the contact size)
@@ -248,11 +248,8 @@ def render_oblique_slice_to_svg(img, entry_world, exit_world, points, **args):
     entry_st = project_point_to_slice(entry_world, entry_world, u, v, w)
     exit_st = project_point_to_slice(exit_world, entry_world, u, v, w)
 
-    # rotate image 90 degrees clockwise
-    rotated_img = np.rot90(slice_img, k=-1)
-
     # plot rotated image
-    plt.imshow(rotated_img, cmap='gray', extent=[t_vals[0], t_vals[-1], s_vals[0], s_vals[-1]], **args)
+    plt.imshow(slice_img.T, cmap='gray', extent=[t_vals[0], t_vals[-1], s_vals[0], s_vals[-1]], **args)
 
     # Project entry and exit to rotated slice coords (s becomes y-axis, t becomes x-axis)
     plt.scatter(entry_st[1], entry_st[0], color='green', label='Entry Point', s=50)
@@ -319,36 +316,36 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
 
         # coordinates from dictionaries 
         marker_coords = [val[0] for val in points]
-        entry_world, exit_world = map(np.array, entry_exit[label])
+        exit_world, entry_world = map(np.array, entry_exit[label])
 
         # for CT + contacts overlays (background group 1)
-        display_x_ct_contacts = plotting.plot_anat(ct_img, display_mode="x", draw_cross=False, cut_coords=[middle_point[0]], **plot_args_ct)
+        display_x_ct_contacts = plotting.plot_anat(ct_img, display_mode="x", draw_cross=False, cut_coords=[middle_point[0]], colorbar=False, **plot_args_ct)
         display_x_ct_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
         bg_x_ct_contacts_svgs = extract_svg(display_x_ct_contacts, 300)
         display_x_ct_contacts.close()
 
-        display_y_ct_contacts = plotting.plot_anat(ct_img, display_mode="y", draw_cross=False, cut_coords=[middle_point[1]], **plot_args_ct)
+        display_y_ct_contacts = plotting.plot_anat(ct_img, display_mode="y", draw_cross=False, cut_coords=[middle_point[1]], colorbar=False, **plot_args_ct)
         display_y_ct_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
         bg_y_ct_contacts_svgs = extract_svg(display_y_ct_contacts, 300)
         display_y_ct_contacts.close()
 
-        display_z_ct_contacts = plotting.plot_anat(ct_img, display_mode="z", draw_cross=False, cut_coords=[middle_point[2]], **plot_args_ct)
+        display_z_ct_contacts = plotting.plot_anat(ct_img, display_mode="z", draw_cross=False, cut_coords=[middle_point[2]], colorbar=False, **plot_args_ct)
         display_z_ct_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
         bg_z_ct_contacts_svgs = extract_svg(display_z_ct_contacts, 300)
         display_z_ct_contacts.close()
 
         # For T1w + contacts overlays (background group 2)
-        display_x_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="x", draw_cross=False, cut_coords=[middle_point[0]], **plot_args_ref)
+        display_x_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="x", draw_cross=False, cut_coords=[middle_point[0]], colorbar=False, **plot_args_ref)
         display_x_t1w_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
         bg_x_t1w_contacts_svgs = extract_svg(display_x_t1w_contacts, 300)
         display_x_t1w_contacts.close()
 
-        display_y_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="y", draw_cross=False, cut_coords=[middle_point[1]], **plot_args_ref)
+        display_y_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="y", draw_cross=False, cut_coords=[middle_point[1]], colorbar=False, **plot_args_ref)
         display_y_t1w_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
         bg_y_t1w_contacts_svgs = extract_svg(display_y_t1w_contacts, 300)
         display_y_t1w_contacts.close()
 
-        display_z_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="z", draw_cross=False, cut_coords=[middle_point[2]], **plot_args_ref)
+        display_z_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="z", draw_cross=False, cut_coords=[middle_point[2]], colorbar=False, **plot_args_ref)
         display_z_t1w_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
         bg_z_t1w_contacts_svgs = extract_svg(display_z_t1w_contacts, 300)
         display_z_t1w_contacts.close()
@@ -366,7 +363,7 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
 
         html_parts.append(f"""
             <div style="margin-bottom: 40px;">
-                <p style="font-size:20px;"><b>{label_long}</b></p>
+                <p style="font-size:20px;"><b>({label}) - {label_long}</b></p>
                 <div style="display: flex; justify-content: center; align-items: center; gap: 10px; text-align: center; background-color: black;">
                     <div style="width: 400px;">
                         {final_svg_x}
@@ -399,9 +396,9 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
             </div>
         """)
 
+        i += 1
         print("finished label: ", label)
 
-        i += 1
     with open(output_html, "w") as f:
         f.write(f"""
         <html>

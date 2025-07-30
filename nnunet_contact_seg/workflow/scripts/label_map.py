@@ -89,7 +89,8 @@ def convert_acronym_to_words(label):
                 matched = True
                 break
         if not matched:
-            raise ValueError(f"Unknown acronym sequence starting at: '{label[i:]}'")
+            print(f"could not map the acronym for {label}")
+            return label
     return " ".join(words)
 
 
