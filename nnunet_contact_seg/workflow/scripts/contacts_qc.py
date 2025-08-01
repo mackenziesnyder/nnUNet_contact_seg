@@ -109,36 +109,25 @@ def clean_svgs(bg1_svgs_strs, bg2_svgs_strs, ref=0):
         <style type="text/css">
         .background-svg.ct {
             opacity: 1;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.2s linear;
         }
         .background-svg.t1w {
             opacity: 0;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.2s linear;
         }
         </style>
-        <script>
-        function updateBlend(slider) {
-            const alpha = parseFloat(slider.value) / 100;
-            document.querySelectorAll('.background-svg.ct').forEach(el => {
-                el.style.opacity = 1 - alpha;
-            });
-            document.querySelectorAll('.background-svg.t1w').forEach(el => {
-                el.style.opacity = alpha;
-            });
-        }
-        </script>
         """
     )
 
     return svg
 
 # dictionary with entry and exit coord for each label
-# from the planned fcsv file
-def find_entry_exit(contact_fcsv_planned_path):
+# from the actual fcsv file
+def find_entry_exit(contact_fcsv_actual_path):
     
     # {label: (x,y,z), (x,y,z) }
     entry_exit_dict = {}
-    with open(contact_fcsv_planned_path, 'r') as f:
+    with open(contact_fcsv_actual_path, 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             if not row or row[0].startswith('#'):
@@ -227,7 +216,7 @@ def project_point_to_slice(P, entry, u, v, w, thickness=20):
     # compute the points distance from the 2d plane
     w_normalized = w / np.linalg.norm(w)
     distance_from_plane = np.dot(P - entry, w_normalized)
-    print(f"distance from plane for {P}: {distance_from_plane}")
+    # print(f"distance from plane for {P}: {distance_from_plane}")
     
     # if close to the trajectory line (still within the contact size)
     # plot the point
@@ -278,7 +267,7 @@ def render_oblique_slice_to_svg(img, entry_world, exit_world, points, **args):
     svg_str = svg_str.lstrip()
     return svg_str
 
-def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_fcsv_labelled_path,output_html):
+def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_fcsv_labelled_path,output_html):
 
     # Load CT image
     ct_img = nib.load(str(ct_img_path))
@@ -294,15 +283,15 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
     t1w_img = nib.as_closest_canonical(t1w_img)
 
     # get coordinate dictionaries for plotting
-    entry_exit = find_entry_exit(contact_fcsv_planned_path)
+    entry_exit = find_entry_exit(contact_fcsv_actual_path)
     contacts = group_contacts(contact_fcsv_labelled_path)
 
     html_parts = []
     
-    for i, (label, points) in enumerate(contacts.items()):
-    # for label, points in contacts.items():
-        if i == 3:
-            break
+    # for i, (label, points) in enumerate(contacts.items()):
+    for label, points in contacts.items():
+        # if i == 1:
+            # break
         
         # axial, sagittal, coronal views taken at the middle contacts slice
         middle_index = len(points) // 2
@@ -389,51 +378,95 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
                         <p>Axial Slice</p>
                     </div>
                     <div style="width: 400px;">
-                        <p>Slice along the trajectory with fixed coronal plane from planned entry -> exit</p>
+                        <p>Slice along the trajectory with fixed coronal plane from entry -> exit</p>
                     </div>
                 </div>
                 <hr style="height:4px;border-width:0;color:black;background-color:black;margin-top:30px;">
             </div>
         """)
 
-        i += 1
+        # i += 1
         print("finished label: ", label)
 
     with open(output_html, "w") as f:
         f.write(f"""
-        <html>
-        <head>
-            <style>
-                #sliderContainer {{
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    background-color: white;
-                    padding: 20px;
-                    text-align: center;
-                    z-index: 1000;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                }}
-                body {{
-                    margin-top: 100px;  
-                }}
-            </style>
-        </head>
-        <body>
-            <div id="sliderContainer">
-                <h3 style="font-size:42px; margin: 0;">{subject_id} Labelled Contacts</h3>
-                <p style="margin:10px;">
-                    <label for="blendSlider" style="font-size:18px;">CT ↔ T1w:</label>
-                    <input id="blendSlider" type="range" min="0" max="100" value="0"
-                        oninput="updateBlend(this)" style="width: 300px; vertical-align: middle;">
-                </p>
-            </div>
-            <center style="padding-top:40px;">
-                {''.join(html_parts)}
-            </center>
-        </body>
-        </html>
+            <html>
+            <head>
+                <style>
+                    #headerContainer {{
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        background-color: white;
+                        padding: 10px;
+                        text-align: center;
+                        z-index: 1000;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    }}
+                    body {{
+                        margin-top: 100px;
+                    }}
+                    @keyframes flickerAnimation {{
+                        0% {{ opacity: 1; }}
+                        50% {{ opacity: 0; }}
+                        100% {{ opacity: 1; }}
+                    }}
+                    .foreground-svg {{
+                        animation: flickerAnimation 3s ease-in-out infinite;
+                    }}
+                    .button-style {{
+                        font-size: 18px;
+                        padding: 10px 20px;
+                        margin: 5px;
+                        border: solid;
+                        border-radius: 8px;
+                        background-color: white;
+                        cursor: pointer;
+                        transition: background-color 0.3s ease;
+                    }}
+                    .button-style:hover {{
+                        background-color: #ECECEC;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div id="headerContainer">
+                    <h3 style="font-size:42px; margin: 0;">{subject_id} Labelled Contacts</h3>
+                    <p style="margin:10px;">
+                        <button class="button-style" onclick="switchView()">Switch CT ↔ T1w</button>
+                        <button class="button-style" onclick="blendView()">Blend CT ↔ T1w</button>
+                    </p>
+                </div>
+
+                <center style="padding-top:40px;">
+                    {''.join(html_parts)}
+                </center>
+
+                <script>
+                    function switchView() {{
+                        const ct = document.querySelectorAll('.background-svg.ct');
+                        const t1w = document.querySelectorAll('.background-svg.t1w');
+                        const isCTVisible = parseFloat(getComputedStyle(ct[0]).opacity) > 0.5;
+
+                        t1w.forEach(el => el.classList.remove('foreground-svg'));
+
+                        ct.forEach(el => el.style.opacity = isCTVisible ? 0 : 1);
+                        t1w.forEach(el => el.style.opacity = isCTVisible ? 1 : 0);
+                    }}
+                    function blendView() {{
+                        const ct = document.querySelectorAll('.background-svg.ct');
+                        const t1w = document.querySelectorAll('.background-svg.t1w');
+
+                        ct.forEach(el => el.style.opacity = 1);
+                        t1w.forEach(el => {{
+                            el.style.opacity = 1;
+                            el.classList.toggle('foreground-svg');
+                        }});
+                    }}
+                </script>
+            </body>
+            </html>
         """)
 
     print(f"HTML output saved to {output_html}")
@@ -441,8 +474,8 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_
 if __name__ == "__main__":
     ct_img_path = snakemake.input["ct_img"]
     t1w_img_path = snakemake.input["t1w_img"]
-    contact_fcsv_planned_path = snakemake.input["contact_fcsv_planned"]
+    contact_fcsv_actual_path = snakemake.input["contact_fcsv_actual"]
     contact_fcsv_labelled_path = snakemake.input["contact_fcsv_labelled"]
     output_html = snakemake.output["html"]
 
-    output_html_file(ct_img_path,t1w_img_path,contact_fcsv_planned_path,contact_fcsv_labelled_path,output_html)
+    output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_fcsv_labelled_path,output_html)
