@@ -85,5 +85,5 @@ rule model_inference:
         "export nnUNet_raw={params.in_folder} && "
         "pwd && "
         "nnUNetv2_predict -device {params.device} -d Dataset011_seeg_contacts -i {params.in_folder} -o {params.out_folder} -f 0 -tr nnUNetTrainer_250epochs --disable_tta -c 3d_fullres -p nnUNetPlans &> {log} && "
-        "echo 'nnUNet prediction complete' &> {log} "
+        "echo 'nnUNet prediction complete' &> {log} && "
         "cp {params.temp_lbl} {output.contact_seg}"
