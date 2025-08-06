@@ -285,10 +285,10 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
 
     html_parts = []
 
-    for i, (label, points) in enumerate(contacts.items()):
-    # for label, points in contacts.items():
-        if i == 3:
-            break
+    # for i, (label, points) in enumerate(contacts.items()):
+    for label, points in contacts.items():
+        # if i == 3:
+        #     break
         
         # axial, sagittal, coronal views taken at the middle contacts slice
         middle_index = len(points) // 2
@@ -382,7 +382,7 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
             </div>
         """)
 
-        i += 1
+        # i += 1
         print("finished label: ", label)
 
     with open(output_html, "w") as f:
