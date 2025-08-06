@@ -182,7 +182,7 @@ def extract_trajectory_slice(nifti_img, entry, exit, width=40, num_points=128):
     # unit vector 
     u = direction / length
     
-    # find orthogonal vector for plane creation using the y-direction slice
+    # find orthogonal vector for plane creation 
     # v = np.cross(u, [0,1,0])
     v = np.cross(u, [1,0,0])
         
@@ -216,7 +216,6 @@ def project_point_to_slice(P, entry, u, v, w, thickness=20):
     # compute the points distance from the 2d plane
     w_normalized = w / np.linalg.norm(w)
     distance_from_plane = np.dot(P - entry, w_normalized)
-    # print(f"distance from plane for {P}: {distance_from_plane}")
     
     # if close to the trajectory line (still within the contact size)
     # plot the point
@@ -237,20 +236,18 @@ def render_oblique_slice_to_svg(img, entry_world, exit_world, points, **args):
     entry_st = project_point_to_slice(entry_world, entry_world, u, v, w)
     exit_st = project_point_to_slice(exit_world, entry_world, u, v, w)
 
-    # plot rotated image
-    plt.imshow(slice_img.T, cmap='gray', extent=[t_vals[0], t_vals[-1], s_vals[0], s_vals[-1]], **args)
+    plt.imshow(slice_img.T, cmap='gray', extent=[t_vals[0], t_vals[-1], s_vals[0], s_vals[-1]], origin='lower', **args)
 
-    # Project entry and exit to rotated slice coords (s becomes y-axis, t becomes x-axis)
-    plt.scatter(entry_st[1], entry_st[0], color='green', label='Entry Point', s=50)
-    plt.scatter(exit_st[1], exit_st[0], color='red', label='Exit Point', s=50)
+    # Plot entry/exit
+    plt.scatter(entry_st[1], entry_st[0], color='green', label='Entry Point', s=100)
+    plt.scatter(exit_st[1], exit_st[0], color='red', label='Exit Point', s=100)
 
-    # plot the contact coords
+    # Plot contacts
     for (pt, label) in points:
         s, t = project_point_to_slice(pt, entry_world, u, v, w)
-        
         if s is not None and t is not None:
-            plt.scatter(t, s, color='orange', s=50)
-            plt.text(t - 2, s - 2, str(label), color='purple', fontsize=12, weight='bold')
+            plt.scatter(t, s, color='orange', s=100, edgecolors='white')
+            plt.text(t + 1, s + 1, str(label), color='white', fontsize=10, weight='bold')
 
     plt.legend()
     plt.axis('off')
@@ -287,11 +284,11 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
     contacts = group_contacts(contact_fcsv_labelled_path)
 
     html_parts = []
-    
-    # for i, (label, points) in enumerate(contacts.items()):
-    for label, points in contacts.items():
-        # if i == 1:
-            # break
+
+    for i, (label, points) in enumerate(contacts.items()):
+    # for label, points in contacts.items():
+        if i == 3:
+            break
         
         # axial, sagittal, coronal views taken at the middle contacts slice
         middle_index = len(points) // 2
@@ -385,7 +382,7 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
             </div>
         """)
 
-        # i += 1
+        i += 1
         print("finished label: ", label)
 
     with open(output_html, "w") as f:
