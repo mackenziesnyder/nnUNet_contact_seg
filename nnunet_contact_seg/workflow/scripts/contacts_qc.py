@@ -240,7 +240,7 @@ def render_oblique_slice_to_svg(img, entry_world, exit_world, points, **args):
 
     # Plot entry/exit
     plt.scatter(entry_st[1], entry_st[0], color='green', label='Entry Point', s=100)
-    plt.scatter(exit_st[1], exit_st[0], color='red', label='Exit Point', s=100)
+    plt.scatter(exit_st[1], exit_st[0], color='red', label='Target Point', s=100)
 
     # Plot contacts
     for (pt, label) in points:
