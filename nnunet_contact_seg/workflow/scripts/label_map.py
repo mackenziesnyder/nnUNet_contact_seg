@@ -95,7 +95,6 @@ def convert_acronym_to_words(label):
                 matched = True
                 break
         if not matched:
-            print(f"could not map the acronym for {label}")
             return original_label
     return " ".join(words)
 

@@ -273,7 +273,6 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
     match = re.search(r"(sub-P\d+)", str(ct_img_path))
     if match:
         subject_id = match.group(1)
-        print(subject_id)
 
     # t1w img
     t1w_img = nib.load(t1w_img_path)
@@ -383,7 +382,6 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
         """)
 
         # i += 1
-        print("finished label: ", label)
 
     with open(output_html, "w") as f:
         f.write(f"""
@@ -465,8 +463,6 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
             </body>
             </html>
         """)
-
-    print(f"HTML output saved to {output_html}")
 
 if __name__ == "__main__":
     ct_img_path = snakemake.input["ct_img"]
