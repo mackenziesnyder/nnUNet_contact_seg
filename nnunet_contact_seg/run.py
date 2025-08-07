@@ -4,13 +4,6 @@ import sys
 from snakebids import bidsapp, plugins
 import os
 
-
-CONFIG_PATH = Path(__file__).resolve().parent / "config" / "snakebids.yml"
-print(f"Running on ReadTheDocs? {'READTHEDOCS' in os.environ}")
-print(f"Config file path: {CONFIG_PATH}")
-print(f"Exists? {CONFIG_PATH.exists()}")
-sys.stdout.flush()
-
 app = bidsapp.app(
     [
         plugins.SnakemakeBidsApp(Path(__file__).resolve().parent),
@@ -18,7 +11,6 @@ app = bidsapp.app(
         plugins.Version(distribution="nnUNet_contact_seg"),
     ]
 )
-
 
 def get_parser():
     """Exposes parser for sphinx doc generation, cwd is the docs dir."""
