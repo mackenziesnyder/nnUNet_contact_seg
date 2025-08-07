@@ -23,5 +23,7 @@ app = bidsapp.app(
 def get_parser():
     """Exposes parser for sphinx doc generation, cwd is the docs dir."""
     return app.build_parser().parser
+
+
 if __name__ == "__main__":
     app.run()
