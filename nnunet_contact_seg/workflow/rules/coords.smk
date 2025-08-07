@@ -19,7 +19,7 @@ if config["transform"]:
     rule transform_coords:
         input:
             coords=rules.get_coords.output.model_coords,
-            transformation_matrix = get_reg_matrix()
+            transformation_matrix=get_reg_matrix(),
         output:
             transformed_coords=bids(
                 root=config["output_dir"],
