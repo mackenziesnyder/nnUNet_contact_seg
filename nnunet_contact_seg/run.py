@@ -2,6 +2,7 @@
 from pathlib import Path
 import sys
 from snakebids import bidsapp, plugins
+import os
 
 
 CONFIG_PATH = Path(__file__).resolve().parent / "config" / "snakebids.yml"
