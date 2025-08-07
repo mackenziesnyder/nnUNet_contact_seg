@@ -65,9 +65,3 @@ disable = """
     missing-module-docstring,
     fixme
 """
-
-[tool.setuptools]
-include-package-data = true
-
-[tool.setuptools.package-data]
-"nnunet_contact_seg" = ["config/snakebids.yml"]

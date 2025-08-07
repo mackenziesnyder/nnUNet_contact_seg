@@ -8,13 +8,13 @@
 These are all the required and optional arguments nnunet_contact_seg accepts in order to run flexibly on many different input data types and with many options, but in most cases only the required arguments are needed. 
 
 <!-- the below code needs to be debugged -->
-<!-- ```{argparse}
+```{argparse}
 ---
 filename: ../nnunet_contact_seg/run.py
 func: get_parser
 prog: nnunet_contact_seg
 ---
-``` -->
+```
 
 
 ## Snakemake command-line interface
