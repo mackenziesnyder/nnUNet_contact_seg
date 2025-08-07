@@ -1,3 +1,10 @@
+bids_dir: "/path/to/bids/dir"
+output_dir: "/path/to/output/dir"
+
+force: True
+debug: False
+derivatives: False
+
 #list of analysis levels in the bids app
 analysis_levels:
  - participant
@@ -51,6 +58,42 @@ pybids_inputs:
 # configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
 parse_args:
+
+  bids_dir:
+    help: The directory with the input dataset formatted according
+          to the BIDS standard.
+
+  output_dir:
+    help: The directory where the output files
+          should be stored. If you are running group level analysis
+          this folder should be prepopulated with the results of the
+          participant level analysis.
+
+  analysis_level:
+    help: Level of the analysis that will be performed.
+    choices: *analysis_levels
+
+  --participant_label:
+    help: The label(s) of the participant(s) that should be analyzed. The label
+          corresponds to sub-<participant_label> from the BIDS spec
+          (so it does not include "sub-"). If this parameter is not
+          provided all subjects should be analyzed. Multiple
+          participants can be specified with a space separated list.
+    nargs: '+'
+
+  --exclude_participant_label:
+    help: The label(s) of the participant(s) that should be excluded. The label
+          corresponds to sub-<participant_label> from the BIDS spec
+          (so it does not include "sub-"). If this parameter is not
+          provided all subjects should be analyzed. Multiple
+          participants can be specified with a space separated list.
+    nargs: '+'
+
+  --derivatives:
+    help: 'Path(s) to a derivatives dataset, for folder(s) that contains multiple derivatives datasets (default: %(default)s) '
+    default: False
+    nargs: '+'
+
   --skip-bids-validation:
     help: |
       Skip validation of BIDS dataset. BIDS validation is performed by default
@@ -94,3 +137,5 @@ resource_urls:
 
 #--- workflow specific configuration ---#
 electrode_type: 'resources/electrodes.config'
+
+plugins.validator.skip: False
