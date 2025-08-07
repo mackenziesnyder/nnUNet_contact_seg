@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 from pathlib import Path
-
+import sys
 from snakebids import bidsapp, plugins
+
+
+CONFIG_PATH = Path(__file__).resolve().parent / "config" / "snakebids.yml"
+print(f"Running on ReadTheDocs? {'READTHEDOCS' in os.environ}")
+print(f"Config file path: {CONFIG_PATH}")
+print(f"Exists? {CONFIG_PATH.exists()}")
+sys.stdout.flush()
 
 app = bidsapp.app(
     [
