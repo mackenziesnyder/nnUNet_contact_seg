@@ -34,7 +34,7 @@ rule download_model:
 
 rule model_inference:
     input:
-        in_img = bids(
+        in_img=bids(
             root=config["bids_dir"],
             suffix="ct",
             datatype="ct",

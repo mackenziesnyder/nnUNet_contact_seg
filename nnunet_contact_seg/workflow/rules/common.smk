@@ -1,19 +1,20 @@
 def get_reg_matrix():
     if not config["manual_reg_matrix"]:
         return bids(
-                root=config["output_dir"],
-                datatype="registration",
-                space="T1w",
-                suffix="xfm.txt",
-                **inputs["post_ct"].wildcards,
-            )
+            root=config["output_dir"],
+            datatype="registration",
+            space="T1w",
+            suffix="xfm.txt",
+            **inputs["post_ct"].wildcards,
+        )
     else:
         return bids(
-                root=config["bids_dir"],
-                suffix="xfm.txt",
-                **inputs["post_ct"].wildcards,
-            )
-    
+            root=config["bids_dir"],
+            suffix="xfm.txt",
+            **inputs["post_ct"].wildcards,
+        )
+
+
 def get_final_output():
     final = []
     final.extend(
