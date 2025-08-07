@@ -5,7 +5,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import numpy as np
 import csv
-from nilearn import plotting
 from svgutils.compose import Unit
 from svgutils.transform import GroupElement, SVGFigure, fromstring
 from scipy.ndimage import map_coordinates
@@ -23,7 +22,7 @@ def svg2str(display_object, dpi):
     return image_buf.getvalue()
 
 # reused from degad code 
-def extract_svg(display_object, dpi=250):
+def extract_svg(display_object, dpi=150):
     """Remove the preamble of the svg files generated with nilearn."""
     image_svg = svg2str(display_object, dpi)
     image_svg = re.sub(' height="[0-9]+[a-z]*"', "", image_svg, count=1)
@@ -211,7 +210,7 @@ def extract_trajectory_slice(nifti_img, entry, exit, width=40, num_points=128):
     # Return image and transformation info
     return slice_img, s_vals, t_vals, u, v, w
 
-def project_point_to_slice(P, entry, u, v, w, thickness=20):
+def project_point_to_slice(P, entry, u, v, w):
 
     # compute the points distance from the 2d plane
     w_normalized = w / np.linalg.norm(w)
@@ -219,7 +218,9 @@ def project_point_to_slice(P, entry, u, v, w, thickness=20):
     
     # if close to the trajectory line (still within the contact size)
     # plot the point
-    if abs(distance_from_plane) <= thickness:
+    # setting thickness to be 1mm 
+    # if off my more than 1mm, the point will not be included 
+    if abs(distance_from_plane) <= 20:
         vec = P - entry
         s = np.dot(vec, v)
         t = np.dot(vec, u)
@@ -253,7 +254,7 @@ def render_oblique_slice_to_svg(img, entry_world, exit_world, points, **args):
     plt.axis('off')
     plt.tight_layout(pad=0)
     svg_buffer = io.StringIO()
-    plt.savefig(svg_buffer, format='svg', bbox_inches='tight', pad_inches=0)
+    plt.savefig(svg_buffer, format='svg', bbox_inches='tight', pad_inches=0, facecolor='black')
     svg_str = svg_buffer.getvalue()
     svg_buffer.close()
     plt.close()
@@ -263,6 +264,75 @@ def render_oblique_slice_to_svg(img, entry_world, exit_world, points, **args):
     svg_str = re.sub(r'<!DOCTYPE.*?>', '', svg_str, flags=re.DOTALL)
     svg_str = svg_str.lstrip()
     return svg_str
+
+def render_plane_slice_to_svg(img, middle_point, points, axis, **args):
+    
+    data = img.get_fdata()
+    affine = img.affine
+
+    # for converting back to voxel from world
+    inv_affine = np.linalg.inv(affine)
+
+    # add 1 to make it middle point homogeneous to the affine matrix
+    # apply inverse matrix for the conversion to voxel
+    # remove the 1
+    point_vox = inv_affine.dot(np.append(middle_point, 1))[:3]
+    # convert to ints for slicing 
+    point_vox = np.round(point_vox).astype(int)
+
+    # compute voxel spacing from the world spacing
+    # important for the images to not look squished with matplotlib
+    # zooms[0] = x zoom etc. 
+    zooms = np.sqrt((affine[:3, :3] ** 2).sum(axis=0))
+
+    # extent = [x_min, x_max, y_min, y_max]
+    if axis == 'x':
+
+        # [y, z]
+        slice_2d = data[point_vox[0], :, :]
+        extent = [0, data.shape[1] * zooms[1], 0, data.shape[2] * zooms[2]]
+    elif axis == 'y':
+        slice_2d = data[:, point_vox[1], :]
+        # [x, z]
+        extent = [0, data.shape[0] * zooms[0], 0, data.shape[2] * zooms[2]]
+    elif axis == 'z':
+        slice_2d = data[:, :, point_vox[2]]
+        # [x, y]
+        extent = [0, data.shape[0] * zooms[0], 0, data.shape[1] * zooms[1]]
+
+    plt.imshow(slice_2d.T, cmap='gray', origin='lower', extent=extent, **args)
+
+    # overlay points within 1mm of the selected slice
+    for pt_entry in points:
+        
+        # take only the points not the label 
+        pt_world, label = pt_entry
+
+        pt_world = np.array(pt_world) # convert tuple
+        # same conversion as above
+        pt_vox = inv_affine.dot(np.append(pt_world, 1))[:3]
+        
+        axis_map = {'x': 0, 'y': 1, 'z': 2}
+        axis_idx = axis_map[axis]
+        plane_axes = [i for i in [0, 1, 2] if i != axis_idx]
+
+        # see is the point is within 1mm of the slice 
+        if abs(pt_vox[axis_idx] - point_vox[axis_idx]) * zooms[axis_idx] < 1:
+            x = pt_vox[plane_axes[0]] * zooms[plane_axes[0]]
+            y = pt_vox[plane_axes[1]] * zooms[plane_axes[1]]
+            plt.scatter(x, y, color='orange', s=40)
+
+    plt.axis('off')
+    plt.tight_layout(pad=0)
+    svg_buffer = io.StringIO()
+    plt.savefig(svg_buffer, format='svg', bbox_inches='tight', pad_inches=0, facecolor='black')
+    svg_str = svg_buffer.getvalue()
+    svg_buffer.close()
+    plt.close()
+
+    svg_str = re.sub(r'<\?xml.*?\?>', '', svg_str, flags=re.DOTALL)
+    svg_str = re.sub(r'<!DOCTYPE.*?>', '', svg_str, flags=re.DOTALL)
+    return svg_str.lstrip()
 
 def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_fcsv_labelled_path,output_html):
 
@@ -277,67 +347,40 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
     # t1w img
     t1w_img = nib.load(t1w_img_path)
     t1w_img = nib.as_closest_canonical(t1w_img)
-
+    
     # get coordinate dictionaries for plotting
     entry_exit = find_entry_exit(contact_fcsv_actual_path)
     contacts = group_contacts(contact_fcsv_labelled_path)
 
     html_parts = []
 
-    # for i, (label, points) in enumerate(contacts.items()):
     for label, points in contacts.items():
-        # if i == 3:
-        #     break
         
         # axial, sagittal, coronal views taken at the middle contacts slice
         middle_index = len(points) // 2
         middle_point = points[middle_index][0]
 
-        # arguements for nilearn and matplotlin
-        plot_args_ref = {"dim": -0.5} 
-        plot_args_ct = {"dim": -0.5, "vmin": 0, "vmax": 2000} 
-        matpltlib_refs_t1w =  {} 
-        matpltlib_refs_ct =  {"vmin": 0, "vmax": 2000} 
+        # arguements matplotlib
+        matplotlib_refs_t1w =  {} 
+        matplotlib_refs_ct =  {"vmin": 0, "vmax": 2000} 
 
         # coordinates from dictionaries 
         marker_coords = [val[0] for val in points]
         exit_world, entry_world = map(np.array, entry_exit[label])
 
         # for CT + contacts overlays (background group 1)
-        display_x_ct_contacts = plotting.plot_anat(ct_img, display_mode="x", draw_cross=False, cut_coords=[middle_point[0]], colorbar=False, **plot_args_ct)
-        display_x_ct_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
-        bg_x_ct_contacts_svgs = extract_svg(display_x_ct_contacts, 300)
-        display_x_ct_contacts.close()
-
-        display_y_ct_contacts = plotting.plot_anat(ct_img, display_mode="y", draw_cross=False, cut_coords=[middle_point[1]], colorbar=False, **plot_args_ct)
-        display_y_ct_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
-        bg_y_ct_contacts_svgs = extract_svg(display_y_ct_contacts, 300)
-        display_y_ct_contacts.close()
-
-        display_z_ct_contacts = plotting.plot_anat(ct_img, display_mode="z", draw_cross=False, cut_coords=[middle_point[2]], colorbar=False, **plot_args_ct)
-        display_z_ct_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
-        bg_z_ct_contacts_svgs = extract_svg(display_z_ct_contacts, 300)
-        display_z_ct_contacts.close()
+        bg_x_ct_contacts_svgs = render_plane_slice_to_svg(ct_img, middle_point, points, axis="x", **matplotlib_refs_ct)
+        bg_y_ct_contacts_svgs = render_plane_slice_to_svg(ct_img, middle_point, points, axis="y", **matplotlib_refs_ct)
+        bg_z_ct_contacts_svgs = render_plane_slice_to_svg(ct_img, middle_point, points, axis="z", **matplotlib_refs_ct)
 
         # For T1w + contacts overlays (background group 2)
-        display_x_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="x", draw_cross=False, cut_coords=[middle_point[0]], colorbar=False, **plot_args_ref)
-        display_x_t1w_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
-        bg_x_t1w_contacts_svgs = extract_svg(display_x_t1w_contacts, 300)
-        display_x_t1w_contacts.close()
-
-        display_y_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="y", draw_cross=False, cut_coords=[middle_point[1]], colorbar=False, **plot_args_ref)
-        display_y_t1w_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
-        bg_y_t1w_contacts_svgs = extract_svg(display_y_t1w_contacts, 300)
-        display_y_t1w_contacts.close()
-
-        display_z_t1w_contacts = plotting.plot_anat(t1w_img, display_mode="z", draw_cross=False, cut_coords=[middle_point[2]], colorbar=False, **plot_args_ref)
-        display_z_t1w_contacts.add_markers(marker_coords, marker_color="orange", marker_size=3)
-        bg_z_t1w_contacts_svgs = extract_svg(display_z_t1w_contacts, 300)
-        display_z_t1w_contacts.close()
+        bg_x_t1w_contacts_svgs = render_plane_slice_to_svg(t1w_img, middle_point, points, axis="x", **matplotlib_refs_t1w)
+        bg_y_t1w_contacts_svgs = render_plane_slice_to_svg(t1w_img, middle_point, points, axis="y", **matplotlib_refs_t1w)
+        bg_z_t1w_contacts_svgs = render_plane_slice_to_svg(t1w_img, middle_point, points, axis="z", **matplotlib_refs_t1w)
 
         # For trajectory slice 
-        svg_oblique_ct = render_oblique_slice_to_svg(ct_img, entry_world, exit_world, points, **matpltlib_refs_ct)
-        svg_oblique_t1w = render_oblique_slice_to_svg(t1w_img, entry_world, exit_world, points, **matpltlib_refs_t1w)
+        svg_oblique_ct = render_oblique_slice_to_svg(ct_img, entry_world, exit_world, points, **matplotlib_refs_ct)
+        svg_oblique_t1w = render_oblique_slice_to_svg(t1w_img, entry_world, exit_world, points, **matplotlib_refs_t1w)
 
         final_svg_x = "\n".join(clean_svgs([bg_x_ct_contacts_svgs], [bg_x_t1w_contacts_svgs]))
         final_svg_y = "\n".join(clean_svgs([bg_y_ct_contacts_svgs], [bg_y_t1w_contacts_svgs]))
@@ -380,8 +423,6 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
                 <hr style="height:4px;border-width:0;color:black;background-color:black;margin-top:30px;">
             </div>
         """)
-
-        # i += 1
 
     with open(output_html, "w") as f:
         f.write(f"""
