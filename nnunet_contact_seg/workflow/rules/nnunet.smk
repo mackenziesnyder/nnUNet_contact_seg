@@ -1,11 +1,8 @@
-from nnunet_contact_seg.workflow.lib import utils as utils
-
-
 def get_model():
     local_model = config["resource_urls"].get("nnUNet_model")
 
     return (
-        Path(utils.get_download_dir()) / "model" / Path(local_model).name
+        Path(get_download_dir()) / "model" / Path(local_model).name
     ).absolute()
 
 
@@ -25,7 +22,7 @@ def get_cmd_copy_inputs(wildcards, input):
 rule download_model:
     params:
         url=config["resource_urls"]["nnUNet_model"],
-        model_dir=Path(utils.get_download_dir()) / "model",
+        model_dir=Path(get_download_dir()) / "model",
     output:
         nnUNet_model=get_model(),
     shell:
