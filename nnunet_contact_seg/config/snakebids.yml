@@ -1,33 +1,23 @@
 bids_dir: "/path/to/bids/dir"
 output_dir: "/path/to/output/dir"
 
-force: True
-debug: False
-derivatives: False
+force: true
+debug: false
+derivatives: false
 
-#list of analysis levels in the bids app
 analysis_levels:
- - participant
+  - participant
 
-
-# mapping from analysis_level to set of target rules or files
 targets_by_analysis_level:
   participant:
-    - 'all'  # if '', then the first rule is run
+    - all
 
-# Configure components:
-# Each entry creates a new component that can be retreived within the workflow
-# via `generate_inputs`.
-# Filters are used to select paths: each filter has an `entity` key and a
-# single value or list of values to select.
-# Wildcards are used to mark variable parts of paths. Each wildcard is an
-# entity, such as `subject` or `session`, that may vary across component paths.
 pybids_inputs:
   post_ct:
     filters:
-      suffix: 'ct'
-      session: 'post'
-      extension: '.nii.gz'
+      suffix: ct
+      session: post
+      extension: .nii.gz
     wildcards:
       - subject
       - run
@@ -36,106 +26,79 @@ pybids_inputs:
       suffix: T1w
       extension: .nii.gz
       datatype: anat
-      session: 'pre'
-      run: '02'
+      session: pre
+      run: "02"
     wildcards:
       - subject
       - acquisition
       - reconstruction
-      # - acq
-  # target_entry:
-  #   filters:
-  #     session: 'pre'
-  #     suffix: 'planned'
-  #     extension: '.fcsv'
-  #   wildcards:
-  #     - subject
-  # transform_txt:
-  #   filters:
-  #     session: 'post'
-  #     suffix: 'xfm'
-  #     extension: '.txt'
-# configuration for the command-line parameters to make available
-# passed on the argparse add_argument()
+
 parse_args:
-
   bids_dir:
-    help: The directory with the input dataset formatted according
-          to the BIDS standard.
-
+    help: >
+      The directory with the input dataset formatted according to the BIDS standard.
   output_dir:
-    help: The directory where the output files
-          should be stored. If you are running group level analysis
-          this folder should be prepopulated with the results of the
-          participant level analysis.
-
+    help: >
+      The directory where the output files should be stored. If you are running group
+      level analysis this folder should be prepopulated with the results of the
+      participant level analysis.
   analysis_level:
     help: Level of the analysis that will be performed.
-    choices: *analysis_levels
-
+    choices:
+      - participant
   --participant_label:
-    help: The label(s) of the participant(s) that should be analyzed. The label
-          corresponds to sub-<participant_label> from the BIDS spec
-          (so it does not include "sub-"). If this parameter is not
-          provided all subjects should be analyzed. Multiple
-          participants can be specified with a space separated list.
-    nargs: '+'
-
+    help: >
+      The label(s) of the participant(s) that should be analyzed. The label
+      corresponds to sub-<participant_label> from the BIDS spec.
+    nargs: "+"
   --exclude_participant_label:
-    help: The label(s) of the participant(s) that should be excluded. The label
-          corresponds to sub-<participant_label> from the BIDS spec
-          (so it does not include "sub-"). If this parameter is not
-          provided all subjects should be analyzed. Multiple
-          participants can be specified with a space separated list.
-    nargs: '+'
-
+    help: >
+      The label(s) of the participant(s) that should be excluded. The label
+      corresponds to sub-<participant_label> from the BIDS spec.
+    nargs: "+"
   --derivatives:
-    help: 'Path(s) to a derivatives dataset, for folder(s) that contains multiple derivatives datasets (default: %(default)s) '
-    default: False
-    nargs: '+'
-
+    help: >
+      Path(s) to a derivatives dataset, for folder(s) that contains multiple derivatives datasets.
+    default: false
+    nargs: "+"
   --skip-bids-validation:
-    help: |
-      Skip validation of BIDS dataset. BIDS validation is performed by default
-      using the bids-validator plugin (if installed/enabled) or with the pybids
-      validator implementation (if bids-validator is not installed/enabled).
-    dest: "plugins.validator.skip"
-    action: "store_true"
-    default: False
+    help: >
+      Skip validation of BIDS dataset. BIDS validation is performed by default.
+    dest: plugins.validator.skip
+    action: store_true
+    default: false
   --run_all_folds:
-    help: |
-      Specify whether to use all 5 folds of the model trained for inference. 
-      Currently defaults to 1 fold.
-    default: False 
+    help: >
+      Specify whether to use all 5 folds of the model trained for inference.
+    default: false
   --transform:
-    help: |
-      Whether predicted coordinates should be transformed. Note that transformation matrix (4x4) must be provided as .txt file.
-    action: 'store_true'
-    default: False
+    help: >
+      Whether predicted coordinates should be transformed.
+    action: store_true
+    default: false
   --label:
-    help: |
-      Whether predicted coordinates should be labelled by electrode. 
-      Requires a 3D Slicer generated .fcsv file, containing the target and entry points for each electrode
-    action: 'store_true'
-    default: False
+    help: >
+      Whether predicted coordinates should be labelled by electrode.
+    action: store_true
+    default: false
   --use_gpu:
-    help: 'Enable gpu for inference by setting resource gpus=1 in run_inference rule (default: %(default)s)'
-    default: False
-    action: 'store_true'  
+    help: >
+      Enable GPU for inference.
+    default: false
+    action: store_true
   --manual_reg_matrix:
-    help: 'Path to .txt file with the registration matrix.'
-    default: False
-    action: 'store_true'
+    help: >
+      Path to .txt file with the registration matrix.
+    default: false
+    action: store_true
 
+containers: {}
 
-
-# Docker and singularity containers may be defined here
-containers:
-    # fsl: 'docker://brainlife/fsl/6.0.0'
 resource_urls:
-  nnUNet_model: 'zenodo.org/records/14519315/files/nnunet_seeg_250_fullres.zip'
+  nnUNet_model: "zenodo.org/records/14519315/files/nnunet_seeg_250_fullres.zip"
 
-#--- workflow specific configuration ---#
-electrode_type: 'resources/electrodes.config'
+electrode_type: "resources/electrodes.config"
 
-plugins.validator.skip: False
+plugins:
+  validator:
+    skip: false
