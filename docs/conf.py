@@ -17,6 +17,12 @@ import sys
 
 sys.path.insert(0, os.path.abspath('.'))
 
+CONFIG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'nnunet_contact_seg', 'config', 'snakebids.yml'))
+
+if not os.path.exists(CONFIG_PATH):
+    warnings.warn(f"Config file not found at {CONFIG_PATH}")
+else:
+    print(f"Config file found at {CONFIG_PATH}")
 # -- Project information -----------------------------------------------------
 
 
