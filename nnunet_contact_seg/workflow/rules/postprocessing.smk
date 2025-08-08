@@ -7,26 +7,18 @@ rule register_contacts:
             datatype="contact_seg",
             **inputs["post_ct"].wildcards,
         ),
-        t1w_img=bids(
-            root=config["output_dir"],
-            suffix="T1w",
-            desc="n4biascorr",
-            datatype="n4biascorr",
-            extension=".nii.gz",
-            **inputs["pre_t1w"].wildcards,
-        ),
         transform_matrix=get_reg_matrix()
     output:
         out_im=bids(
             root=config["output_dir"],
             suffix="dseg.nii.gz",
-            datatype="registration",
+            datatype="contact_seg",
             space="T1w",
             desc="contacts_nnUNet",
             **inputs["post_ct"].wildcards,
         )
     script:
-        '../scripts/apply_registration.py'
+        '../scripts/apply_contact_registration.py'
 
 rule contacts_qc:
     input: 
@@ -46,17 +38,19 @@ rule contacts_qc:
             **inputs["post_ct"].wildcards,
         ),
         contact_fcsv_actual=bids(
-                root=config["bids_dir"],
-                suffix="actual",
-                extension=".fcsv",
-                **inputs["post_ct"].wildcards,
-            ),
+            root=config["bids_dir"],
+            suffix="actual",
+            extension=".fcsv",
+            **inputs["post_ct"].wildcards,
+         ),
+    params:
+        exclude_label_map=config["exclude_label_map"]
     output: 
         html=bids(
             root=config["output_dir"],
             datatype="qc",
             desc="contacts_qc",
-            suffix=".html",
+            suffix="contacts.html",
             **inputs["post_ct"].wildcards,
         )
     script: '../scripts/contacts_qc.py'

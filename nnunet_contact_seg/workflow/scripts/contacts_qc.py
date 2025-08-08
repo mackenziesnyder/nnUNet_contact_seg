@@ -22,7 +22,7 @@ def svg2str(display_object, dpi):
     return image_buf.getvalue()
 
 # reused from degad code 
-def extract_svg(display_object, dpi=150):
+def extract_svg(display_object, dpi=250):
     """Remove the preamble of the svg files generated with nilearn."""
     image_svg = svg2str(display_object, dpi)
     image_svg = re.sub(' height="[0-9]+[a-z]*"', "", image_svg, count=1)
@@ -182,9 +182,10 @@ def extract_trajectory_slice(nifti_img, entry, exit, width=40, num_points=128):
     u = direction / length
     
     # find orthogonal vector for plane creation 
-    # v = np.cross(u, [0,1,0])
-    v = np.cross(u, [1,0,0])
-        
+    # pick a reference axis that's not parallel to u - check all 3 slice planes 
+    ref_axis = np.array([0, 1, 0]) if abs(np.dot(u, [0, 1, 0])) < 0.9 else np.array([1, 0, 0])
+    v = np.cross(u, ref_axis)
+
     # normalize the vector 
     v /= np.linalg.norm(v)
     w = np.cross(u, v)
@@ -240,8 +241,8 @@ def render_oblique_slice_to_svg(img, entry_world, exit_world, points, **args):
     plt.imshow(slice_img.T, cmap='gray', extent=[t_vals[0], t_vals[-1], s_vals[0], s_vals[-1]], origin='lower', **args)
 
     # Plot entry/exit
-    plt.scatter(entry_st[1], entry_st[0], color='green', label='Entry Point', s=100)
-    plt.scatter(exit_st[1], exit_st[0], color='red', label='Target Point', s=100)
+    plt.scatter(entry_st[1] + 1, entry_st[0], color='green', label='Entry Point', s=100)
+    plt.scatter(exit_st[1] + 1, exit_st[0], color='red', label='Target Point', s=100)
 
     # Plot contacts
     for (pt, label) in points:
@@ -334,7 +335,7 @@ def render_plane_slice_to_svg(img, middle_point, points, axis, **args):
     svg_str = re.sub(r'<!DOCTYPE.*?>', '', svg_str, flags=re.DOTALL)
     return svg_str.lstrip()
 
-def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_fcsv_labelled_path,output_html):
+def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_fcsv_labelled_path, exclude_label_map, output_html):
 
     # Load CT image
     ct_img = nib.load(str(ct_img_path))
@@ -387,7 +388,11 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
         final_svg_z = "\n".join(clean_svgs([bg_z_ct_contacts_svgs], [bg_z_t1w_contacts_svgs]))
         final_svg_oblique = "\n".join(clean_svgs([svg_oblique_ct], [svg_oblique_t1w]))
 
-        label_long = convert_acronym_to_words(label)
+        # in exclude_label_map is included, do not use map label code  
+        if exclude_label_map == True:
+            label_long = label
+        else:
+            label_long = convert_acronym_to_words(label)
 
         html_parts.append(f"""
             <div style="margin-bottom: 40px;">
@@ -510,6 +515,7 @@ if __name__ == "__main__":
     t1w_img_path = snakemake.input["t1w_img"]
     contact_fcsv_actual_path = snakemake.input["contact_fcsv_actual"]
     contact_fcsv_labelled_path = snakemake.input["contact_fcsv_labelled"]
+    exclude_label_map = snakemake.params["exclude_label_map"]
     output_html = snakemake.output["html"]
 
-    output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_fcsv_labelled_path,output_html)
+    output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_fcsv_labelled_path,exclude_label_map,output_html)
