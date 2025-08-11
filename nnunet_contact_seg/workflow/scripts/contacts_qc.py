@@ -162,7 +162,7 @@ def group_contacts(contact_fcsv_labelled_path):
     return coords_dict
 
 # extract a slice along the trajectory from the entrance to exit point 
-def extract_trajectory_slice(nifti_img, entry, exit, width=40, num_points=128):
+def extract_trajectory_slice(nifti_img, entry, exit, width=40, num_points=256):
     
     # load image and affine
     data = nifti_img.get_fdata()
@@ -181,9 +181,9 @@ def extract_trajectory_slice(nifti_img, entry, exit, width=40, num_points=128):
     # unit vector 
     u = direction / length
     
-    # find orthogonal vector for plane creation 
-    # pick a reference axis that's not parallel to u - check all 3 slice planes 
-    ref_axis = np.array([0, 1, 0]) if abs(np.dot(u, [0, 1, 0])) < 0.9 else np.array([1, 0, 0])
+    # reference axis 
+    ref_axis = np.array([1, 0, 0]) if abs(np.dot(u, [1, 0, 0])) < 0.95 else np.array([0, 0, 1])
+    
     v = np.cross(u, ref_axis)
 
     # normalize the vector 
@@ -238,11 +238,12 @@ def render_oblique_slice_to_svg(img, entry_world, exit_world, points, **args):
     entry_st = project_point_to_slice(entry_world, entry_world, u, v, w)
     exit_st = project_point_to_slice(exit_world, entry_world, u, v, w)
 
-    plt.imshow(slice_img.T, cmap='gray', extent=[t_vals[0], t_vals[-1], s_vals[0], s_vals[-1]], origin='lower', **args)
+    offset_direction = np.sign(v[1]) 
+    offset = 2 * offset_direction
 
-    # Plot entry/exit
-    plt.scatter(entry_st[1] + 1, entry_st[0], color='green', label='Entry Point', s=100)
-    plt.scatter(exit_st[1] + 1, exit_st[0], color='red', label='Target Point', s=100)
+    plt.imshow(slice_img.T, cmap='gray', extent=[t_vals[0], t_vals[-1], s_vals[0], s_vals[-1]], origin='lower', **args)
+    plt.scatter(entry_st[1], entry_st[0] + offset, color='green', label='Entry Point', s=100)
+    plt.scatter(exit_st[1], exit_st[0] + offset, color='red', label='Target Point', s=100)
 
     # Plot contacts
     for (pt, label) in points:
@@ -366,7 +367,6 @@ def output_html_file(ct_img_path,t1w_img_path,contact_fcsv_actual_path,contact_f
         matplotlib_refs_ct =  {"vmin": 0, "vmax": 2000} 
 
         # coordinates from dictionaries 
-        marker_coords = [val[0] for val in points]
         exit_world, entry_world = map(np.array, entry_exit[label])
 
         # for CT + contacts overlays (background group 1)

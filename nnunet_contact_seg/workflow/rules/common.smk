@@ -41,7 +41,7 @@ def get_final_output():
             bids(
                 root=config["output_dir"],
                 suffix="dseg.nii.gz",
-                datatype="registration",
+                datatype="contact_seg",
                 space="T1w",
                 desc="contacts_nnUNet",
                 **inputs["post_ct"].wildcards,
