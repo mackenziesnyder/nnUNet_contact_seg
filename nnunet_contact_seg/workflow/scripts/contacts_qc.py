@@ -271,6 +271,9 @@ def render_plane_slice_to_svg(img, middle_point, points, axis, **args):
     
     data = img.get_fdata()
     affine = img.affine
+    
+    # flip left and right axis in the image for radiological view
+    data = np.flip(data, axis=0)
 
     # for converting back to voxel from world
     inv_affine = np.linalg.inv(affine)
@@ -281,7 +284,7 @@ def render_plane_slice_to_svg(img, middle_point, points, axis, **args):
     point_vox = inv_affine.dot(np.append(middle_point, 1))[:3]
     # convert to ints for slicing 
     point_vox = np.round(point_vox).astype(int)
-
+    point_vox[0] = data.shape[0] - 1 - point_vox[0]
     # compute voxel spacing from the world spacing
     # important for the images to not look squished with matplotlib
     # zooms[0] = x zoom etc. 
@@ -292,6 +295,9 @@ def render_plane_slice_to_svg(img, middle_point, points, axis, **args):
 
         # [y, z]
         slice_2d = data[point_vox[0], :, :]
+        
+        # to display saggital slice facing left instead of right
+        slice_2d = np.flipud(slice_2d)
         extent = [0, data.shape[1] * zooms[1], 0, data.shape[2] * zooms[2]]
     elif axis == 'y':
         slice_2d = data[:, point_vox[1], :]
@@ -313,6 +319,7 @@ def render_plane_slice_to_svg(img, middle_point, points, axis, **args):
         pt_world = np.array(pt_world) # convert tuple
         # same conversion as above
         pt_vox = inv_affine.dot(np.append(pt_world, 1))[:3]
+        pt_vox[0] = data.shape[0] - 1 - pt_vox[0]
         
         axis_map = {'x': 0, 'y': 1, 'z': 2}
         axis_idx = axis_map[axis]
@@ -322,6 +329,11 @@ def render_plane_slice_to_svg(img, middle_point, points, axis, **args):
         if abs(pt_vox[axis_idx] - point_vox[axis_idx]) * zooms[axis_idx] < 1:
             x = pt_vox[plane_axes[0]] * zooms[plane_axes[0]]
             y = pt_vox[plane_axes[1]] * zooms[plane_axes[1]]
+
+            # to account for saggital slice facing left instead of right
+            if axis == 'x':  
+                x = data.shape[1] * zooms[1] - x
+                
             plt.scatter(x, y, color='orange', s=40)
 
     plt.axis('off')
