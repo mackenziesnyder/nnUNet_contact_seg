@@ -2,10 +2,12 @@
 import os
 from pathlib import Path
 
+import sys
 from snakebids import bidsapp, plugins
 
 if "__file__" not in globals():
     __file__ = "../nnunet_contact_seg/run.py"
+import os
 
 app = bidsapp.app(
     [

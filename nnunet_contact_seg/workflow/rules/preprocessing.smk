@@ -21,6 +21,7 @@ rule n4biascorr:
     script:
         "../scripts/n4_bias_corr.py"
 
+
 rule get_registration_matrix:
     input:
         post_ct=bids(

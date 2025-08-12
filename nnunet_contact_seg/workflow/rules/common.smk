@@ -33,7 +33,7 @@ def get_registered_ct_image():
             extension=".nii.gz",
             **inputs["post_ct"].wildcards,
         )
-    
+
 def get_final_output():
     final = []
     final.extend(
